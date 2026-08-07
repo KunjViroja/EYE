@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   BarChart2,
   ShoppingBag,
@@ -36,10 +37,13 @@ const managementNavItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const userName = session?.user?.name || "Julianne Moore";
+  const userRole = (session?.user as any)?.role || "Boutique Manager";
 
   return (
     <aside className={styles.sidebar} aria-label="Main navigation">
-
       {/* ─── Logo ─────────────────────────────────────────────── */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>
@@ -63,7 +67,6 @@ export default function Sidebar() {
               className={`${styles.navItem} ${isActive ? styles.active : ""}`}
               aria-current={isActive ? "page" : undefined}
             >
-              {/* Active indicator bar */}
               {isActive && <span className={styles.activeBar} aria-hidden="true" />}
               <Icon
                 size={16}
@@ -96,17 +99,20 @@ export default function Sidebar() {
       </nav>
 
       {/* ─── User Section ─────────────────────────────────────── */}
-      {/* Phase 2: this pulls name/role from the auth session */}
       <div className={styles.userSection}>
         <div className={styles.userAvatar} aria-hidden="true">
-          {/* Shows user initials — dynamic in Phase 2 */}
-          <UserCircle size={18} strokeWidth={1.5} />
+          <UserCircle size={20} strokeWidth={1.5} />
         </div>
         <div className={styles.userInfo}>
-          <div className={styles.userName}>Your Account</div>
-          <div className={styles.userRole}>Sign in to continue</div>
+          <div className={styles.userName}>{userName}</div>
+          <div className={styles.userRole}>{userRole}</div>
         </div>
-        <button className={styles.logoutBtn} title="Sign out" aria-label="Sign out">
+        <button
+          className={styles.logoutBtn}
+          title="Sign out"
+          aria-label="Sign out"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+        >
           <LogOut size={14} strokeWidth={1.8} />
         </button>
       </div>

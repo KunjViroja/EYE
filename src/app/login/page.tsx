@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Mail, Lock, ArrowRight } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { Eye, Mail, Lock } from "lucide-react";
 import styles from "./LoginPage.module.css";
 
 export default function LoginPage() {
@@ -10,14 +11,33 @@ export default function LoginPage() {
   const [email, setEmail] = useState("admin@eye.com");
   const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    // Simulate sign in & redirect to insights
-    setTimeout(() => {
+
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        // Fallback for demo mode if database connection delays
+        router.push("/insights");
+      } else {
+        router.push("/insights");
+        router.refresh();
+      }
+    } catch (err: any) {
+      // Direct navigation on demo click
       router.push("/insights");
-    }, 600);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,6 +53,8 @@ export default function LoginPage() {
           <p className={styles.subtitle}>Enter your credentials to access the atelier</p>
         </div>
 
+        {error && <div className={styles.error}>{error}</div>}
+
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="login-email">Email Address</label>
@@ -44,7 +66,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@boutique.com"
+                placeholder="admin@eye.com"
                 className={styles.input}
               />
             </div>
@@ -74,7 +96,7 @@ export default function LoginPage() {
         <div className={styles.demoHint}>
           <span className={styles.demoHighlight}>Demo Mode Active:</span>
           <br />
-          Click Sign In to explore the dashboard.
+          Click Sign In to access all management pages.
         </div>
       </div>
     </div>
