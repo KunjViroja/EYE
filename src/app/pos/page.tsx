@@ -1,31 +1,186 @@
-import type { Metadata } from "next";
-import { mockProducts, mockClients } from "@/lib/mockData";
-import shellStyles from "@/components/layout/AppShell.module.css";
+"use client";
+
+import { useState, useEffect } from "react";
+import { getProducts } from "@/app/actions/products";
+import { getClients } from "@/app/actions/clients";
+import { processSaleTransaction } from "@/app/actions/sales";
 import styles from "./POSPage.module.css";
-import { Search, ShoppingBag, Minus, Plus, Trash2, Sparkles, CreditCard, Building2, Tag, ChevronRight } from "lucide-react";
+import { Search, ShoppingBag, Minus, Plus, Trash2, Sparkles, CreditCard, Building2, Tag, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
+import { PaymentMethod } from "@prisma/client";
 
-export const metadata: Metadata = { title: "Boutique POS" };
+interface POSProduct {
+  id: string;
+  brand: string;
+  name: string;
+  sku: string;
+  price: number;
+  badge?: string;
+  category: string;
+}
 
-// Mock cart state (in Phase 2 this will be real React state via useState)
-const cartItems = [
-  { id: "cart-1", name: "Gregory Peck Custom", desc: "Vintage Gold / Clear Acetate", price: 340, qty: 1, hasPrescription: true },
-  { id: "cart-2", name: "Zeiss Bespoke Progressive", desc: "DuraVision BlueProtect Elite", price: 220, qty: 1, hasPrescription: false },
-];
+interface CartItem {
+  product: POSProduct;
+  quantity: number;
+  hasPrescription: boolean;
+}
 
-const selectedClient = mockClients[0]; // Sofia Jensen
-const subtotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
-const discount = subtotal * 0.1;
-const grandTotal = subtotal - discount;
+interface POSClientData {
+  id: string;
+  name: string;
+  tier: string;
+  discountRate: number;
+}
 
 const CATEGORIES = ["All", "Frames", "Lenses", "Accessories"];
 
 export default function POSPage() {
+  const [products, setProducts] = useState<POSProduct[]>([]);
+  const [clients, setClients] = useState<POSClientData[]>([]);
+  const [selectedClient, setSelectedClient] = useState<POSClientData | null>(null);
+
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Cart state
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.DEBIT_CREDIT);
+  const [processing, setProcessing] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // 1. Fetch live products & clients from Supabase
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      
+      const [prodRes, clientRes] = await Promise.all([
+        getProducts(selectedCategory, searchQuery),
+        getClients(),
+      ]);
+
+      if (prodRes.success && prodRes.data) {
+        setProducts(
+          prodRes.data.map((p) => ({
+            id: p.id,
+            brand: p.brand,
+            name: p.name,
+            sku: p.sku,
+            price: p.price,
+            badge: p.badge ? p.badge.replace("_", " ") : undefined,
+            category: p.category,
+          }))
+        );
+      }
+
+      if (clientRes.success && clientRes.data && clientRes.data.length > 0) {
+        const clientList = clientRes.data.map((c) => ({
+          id: c.id,
+          name: c.name,
+          tier: c.tier.replace(/_/g, " "),
+          discountRate: 0.1, // 10% member discount
+        }));
+        setClients(clientList);
+        setSelectedClient(clientList[0]); // Default to first live client in DB
+      }
+
+      setLoading(false);
+    }
+
+    loadData();
+  }, [selectedCategory, searchQuery]);
+
+  // Cart helper functions
+  const addToCart = (product: POSProduct) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { product, quantity: 1, hasPrescription: false }];
+    });
+  };
+
+  const updateQuantity = (productId: string, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.product.id === productId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  };
+
+  const resetCart = () => {
+    setCart([]);
+    setStatusMsg(null);
+  };
+
+  // Calculation totals
+  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const discountRate = selectedClient ? selectedClient.discountRate : 0;
+  const discount = subtotal * discountRate;
+  const grandTotal = Math.max(0, subtotal - discount);
+
+  // Handle Process Transaction
+  const handleProcessTransaction = async () => {
+    if (!selectedClient) {
+      setStatusMsg({ type: "error", text: "No client selected." });
+      return;
+    }
+
+    if (cart.length === 0) {
+      setStatusMsg({ type: "error", text: "Cart is empty. Add items before processing." });
+      return;
+    }
+
+    setProcessing(true);
+    setStatusMsg(null);
+
+    // Call live Server Action to save in Supabase
+    const result = await processSaleTransaction({
+      clientId: selectedClient.id,
+      items: cart.map((item) => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+        hasPrescription: item.hasPrescription,
+      })),
+      paymentMethod,
+      subtotal,
+      discount,
+      grandTotal,
+    });
+
+    setProcessing(false);
+
+    if (result.success) {
+      setStatusMsg({
+        type: "success",
+        text: `Transaction #${result.data?.id.slice(-6).toUpperCase()} processed successfully! Recorded in Supabase.`,
+      });
+      setCart([]); // Clear cart on success
+    } else {
+      setStatusMsg({ type: "error", text: result.error || "Failed to process transaction." });
+    }
+  };
+
   return (
     <div className={styles.layout}>
       {/* Left — Product Selector */}
       <div className={styles.left}>
-        {/* Search & Categories bar */}
         <div className={styles.searchRow}>
           <div className={styles.searchWrap}>
             <Search size={15} className={styles.searchIcon} />
@@ -33,6 +188,8 @@ export default function POSPage() {
               type="search"
               placeholder="Search collection, brand or model..."
               className={styles.searchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               id="pos-search"
             />
           </div>
@@ -41,7 +198,8 @@ export default function POSPage() {
               <button
                 key={cat}
                 type="button"
-                className={`${styles.catTab} ${cat === "All" ? styles.catTabActive : ""}`}
+                className={`${styles.catTab} ${selectedCategory === cat ? styles.catTabActive : ""}`}
+                onClick={() => setSelectedCategory(cat)}
               >
                 {cat}
               </button>
@@ -50,31 +208,41 @@ export default function POSPage() {
         </div>
 
         {/* Product grid */}
-        <div className={styles.productGrid}>
-          {mockProducts.map((p) => (
-            <div key={p.id} className={styles.productTile}>
-              {p.badge && (
-                <span className={`${styles.tileBadge} ${p.badge === "IN STOCK" ? styles.tileBadgeGreen : styles.tileBadgeGold}`}>
-                  {p.badge}
-                </span>
-              )}
-              <div className={styles.tileImage}>
-                <EyewearSilhouette color="#C9A96E" size={48} />
+        {loading ? (
+          <div className={styles.loadingGrid}>Loading live products from Supabase…</div>
+        ) : (
+          <div className={styles.productGrid}>
+            {products.map((p) => (
+              <div
+                key={p.id}
+                className={styles.productTile}
+                onClick={() => addToCart(p)}
+                role="button"
+                tabIndex={0}
+              >
+                {p.badge && (
+                  <span className={`${styles.tileBadge} ${p.badge === "IN STOCK" ? styles.tileBadgeGreen : styles.tileBadgeGold}`}>
+                    {p.badge}
+                  </span>
+                )}
+                <div className={styles.tileImage}>
+                  <EyewearSilhouette color="#C9A96E" size={48} />
+                </div>
+                <div className={styles.tileBrand}>{p.brand}</div>
+                <div className={styles.tileName}>{p.name}</div>
+                <div className={styles.tilePrice}>${p.price}</div>
               </div>
-              <div className={styles.tileBrand}>{p.brand}</div>
-              <div className={styles.tileName}>{p.name}</div>
-              <div className={styles.tilePrice}>${p.price}</div>
-            </div>
-          ))}
+            ))}
 
-          {/* Bespoke consultation item */}
-          <div className={`${styles.productTile} ${styles.productTileDashed}`}>
-            <div className={styles.tileImage}>
-              <Sparkles size={24} color="var(--color-gold)" opacity={0.6} />
+            {/* Consultation Tile */}
+            <div className={`${styles.productTile} ${styles.productTileDashed}`}>
+              <div className={styles.tileImage}>
+                <Sparkles size={24} color="var(--color-gold)" opacity={0.6} />
+              </div>
+              <div className={styles.tileConsult}>BESPOKE CONSULTATION ITEM</div>
             </div>
-            <div className={styles.tileConsult}>BESPOKE CONSULTATION ITEM</div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Right — Checkout Panel */}
@@ -82,46 +250,85 @@ export default function POSPage() {
         <div className={styles.checkoutPanel}>
           <div className={styles.checkoutHeader}>
             <h2 className={styles.checkoutTitle}>Atelier Checkout</h2>
-            <button type="button" className={styles.resetBag}>RESET BAG</button>
+            <button type="button" className={styles.resetBag} onClick={resetCart}>
+              RESET BAG
+            </button>
           </div>
+
+          {/* Transaction Status Notification */}
+          {statusMsg && (
+            <div
+              className={`${styles.statusBanner} ${
+                statusMsg.type === "success" ? styles.statusSuccess : styles.statusError
+              }`}
+            >
+              {statusMsg.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{statusMsg.text}</span>
+            </div>
+          )}
 
           {/* Client Selection */}
           <div className={styles.clientRow}>
-            <div className={styles.clientAvatar}>SJ</div>
+            <div className={styles.clientAvatar}>
+              {selectedClient ? selectedClient.name.split(" ").map(n => n[0]).join("").toUpperCase() : "SJ"}
+            </div>
             <div className={styles.clientMeta}>
-              <div className={styles.clientName}>{selectedClient.name}</div>
-              <div className={styles.clientTier}>{selectedClient.tier}</div>
+              <div className={styles.clientName}>{selectedClient ? selectedClient.name : "Sofia Jensen"}</div>
+              <div className={styles.clientTier}>{selectedClient ? selectedClient.tier : "ELITE ATELIER MEMBER"}</div>
             </div>
             <ChevronRight size={16} className={styles.chevron} />
           </div>
 
           {/* Cart Items */}
           <div className={styles.cartItems}>
-            {cartItems.map((item) => (
-              <div key={item.id} className={styles.cartItem}>
-                <div className={styles.cartItemImg}>
-                  <EyewearSilhouette color="#C9A96E" size={36} />
-                </div>
-                <div className={styles.cartItemInfo}>
-                  <div className={styles.cartItemName}>{item.name}</div>
-                  <div className={styles.cartItemDesc}>{item.desc}</div>
-                  <div className={styles.cartItemControls}>
-                    <button type="button" className={styles.qtyBtn}><Minus size={12} /></button>
-                    <span className={styles.qty}>{item.qty}</span>
-                    <button type="button" className={styles.qtyBtn}><Plus size={12} /></button>
-                    {item.hasPrescription && (
-                      <span className={styles.rxBadge}>PRESCRIPTION APPLIED</span>
-                    )}
+            {cart.length === 0 ? (
+              <div className={styles.emptyCart}>
+                <ShoppingBag size={32} strokeWidth={1.2} opacity={0.4} />
+                <p>Click any creation on the left to add to bag.</p>
+              </div>
+            ) : (
+              cart.map((item) => (
+                <div key={item.product.id} className={styles.cartItem}>
+                  <div className={styles.cartItemImg}>
+                    <EyewearSilhouette color="#C9A96E" size={32} />
+                  </div>
+                  <div className={styles.cartItemInfo}>
+                    <div className={styles.cartItemName}>{item.product.name}</div>
+                    <div className={styles.cartItemDesc}>{item.product.brand} • ${item.product.price}</div>
+                    <div className={styles.cartItemControls}>
+                      <button
+                        type="button"
+                        className={styles.qtyBtn}
+                        onClick={() => updateQuantity(item.product.id, -1)}
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className={styles.qty}>{item.quantity}</span>
+                      <button
+                        type="button"
+                        className={styles.qtyBtn}
+                        onClick={() => updateQuantity(item.product.id, 1)}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.cartItemRight}>
+                    <span className={styles.cartItemPrice}>
+                      ${(item.product.price * item.quantity).toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.deleteBtn}
+                      onClick={() => removeFromCart(item.product.id)}
+                      aria-label="Delete item"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
-                <div className={styles.cartItemRight}>
-                  <span className={styles.cartItemPrice}>${item.price.toFixed(2)}</span>
-                  <button type="button" className={styles.deleteBtn} aria-label="Delete item">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Totals */}
@@ -144,19 +351,33 @@ export default function POSPage() {
 
           {/* Payment Methods */}
           <div className={styles.paymentMethods}>
-            <button type="button" className={`${styles.payBtn} ${styles.payBtnActive}`}>
+            <button
+              type="button"
+              className={`${styles.payBtn} ${paymentMethod === PaymentMethod.DEBIT_CREDIT ? styles.payBtnActive : ""}`}
+              onClick={() => setPaymentMethod(PaymentMethod.DEBIT_CREDIT)}
+            >
               <CreditCard size={18} />
               DEBIT / CREDIT
             </button>
-            <button type="button" className={styles.payBtn}>
+            <button
+              type="button"
+              className={`${styles.payBtn} ${paymentMethod === PaymentMethod.WIRE_TRANSFER ? styles.payBtnActive : ""}`}
+              onClick={() => setPaymentMethod(PaymentMethod.WIRE_TRANSFER)}
+            >
               <Building2 size={18} />
               WIRE TRANSFER
             </button>
           </div>
 
           {/* Process Button */}
-          <button type="button" className={styles.processBtn} id="pos-process-transaction">
-            Process Transaction
+          <button
+            type="button"
+            className={styles.processBtn}
+            onClick={handleProcessTransaction}
+            disabled={processing || cart.length === 0}
+            id="pos-process-transaction"
+          >
+            {processing ? "Processing Transaction…" : "Process Transaction"}
           </button>
         </div>
       </div>
