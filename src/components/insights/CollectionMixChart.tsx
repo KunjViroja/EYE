@@ -22,11 +22,11 @@ export default function CollectionMixChart({ data }: Props) {
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={55}   /* innerRadius creates the donut hole */
+              innerRadius={55}
               outerRadius={85}
               dataKey="percentage"
               paddingAngle={2}
-              startAngle={90}    /* Start from top */
+              startAngle={90}
               endAngle={-270}
             >
               {data.map((entry, index) => (
@@ -34,7 +34,7 @@ export default function CollectionMixChart({ data }: Props) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [`${value}%`, ""]}
+              formatter={(value: any) => [`${value ?? 0}%`, ""]}
               contentStyle={{
                 background: "var(--color-navy)",
                 border: "none",
