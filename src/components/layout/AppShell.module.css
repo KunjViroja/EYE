@@ -1,26 +1,40 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Root Layout Styles
    
-   This layout creates the two-column structure:
-   [Sidebar (fixed left)] [Main Content (scrollable right)]
+   Three-column structure:
+   [Sidebar fixed left] | [Right pane: Topbar sticky + scrollable Main]
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .appShell {
-  display: flex;          /* Flexbox: sidebar and main sit side by side */
-  min-height: 100vh;      /* At least full viewport height */
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Right pane: holds the sticky topbar + scrollable content */
+.rightPane {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .mainContent {
-  flex: 1;                /* Takes up all remaining space after sidebar */
-  margin-left: var(--sidebar-width); /* Offset by sidebar width so content doesn't hide behind it */
-  min-height: 100vh;
+  flex: 1;
   background-color: var(--color-bg);
-  overflow-x: hidden;    /* Prevents horizontal scroll */
+  overflow-x: hidden;
+  /* Page entry animation */
+  animation: fadeInUp 0.35s ease forwards;
 }
 
-/* ─── Page Header (used by all pages) ──────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Page Header ────────────────────────────────────────────────────────── */
 .pageHeader {
-  padding: var(--space-8) var(--space-8) var(--space-6);
+  padding: var(--space-6) var(--space-8) var(--space-5);
   border-bottom: 1px solid var(--color-border-light);
   background-color: var(--color-surface);
   display: flex;
@@ -29,15 +43,15 @@
   gap: var(--space-4);
 }
 
-.pageHeaderLeft {
-  flex: 1;
-}
+.pageHeaderLeft { flex: 1; }
 
 .pageTitle {
+  /* Playfair Display applied via globals.css h1 rule */
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin-bottom: 2px;
+  letter-spacing: -0.01em;
 }
 
 .pageSubtitle {
@@ -50,9 +64,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
-/* ─── Page Body ─────────────────────────────────────────────────────────── */
+/* ─── Page Body ──────────────────────────────────────────────────────────── */
 .pageBody {
   padding: var(--space-6) var(--space-8);
 }

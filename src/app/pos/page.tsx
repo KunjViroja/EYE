@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { mockProducts, mockClients } from "@/lib/mockData";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./POSPage.module.css";
-import { Search, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { Search, ShoppingBag, Minus, Plus, Trash2, Sparkles, CreditCard, Building2, Tag, ChevronRight } from "lucide-react";
+import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 
 export const metadata: Metadata = { title: "Boutique POS" };
 
@@ -12,7 +13,7 @@ const cartItems = [
   { id: "cart-2", name: "Zeiss Bespoke Progressive", desc: "DuraVision BlueProtect Elite", price: 220, qty: 1, hasPrescription: false },
 ];
 
-const selectedClient = mockClients[1]; // Sofia Jensen
+const selectedClient = mockClients[0]; // Sofia Jensen
 const subtotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
 const discount = subtotal * 0.1;
 const grandTotal = subtotal - discount;
@@ -24,7 +25,7 @@ export default function POSPage() {
     <div className={styles.layout}>
       {/* Left — Product Selector */}
       <div className={styles.left}>
-        {/* Search bar */}
+        {/* Search & Categories bar */}
         <div className={styles.searchRow}>
           <div className={styles.searchWrap}>
             <Search size={15} className={styles.searchIcon} />
@@ -35,35 +36,42 @@ export default function POSPage() {
               id="pos-search"
             />
           </div>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              className={`${styles.catTab} ${cat === "All" ? styles.catTabActive : ""}`}
-            >
-              {cat}
-            </button>
-          ))}
+          <div className={styles.catGroup}>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`${styles.catTab} ${cat === "All" ? styles.catTabActive : ""}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Product grid */}
         <div className={styles.productGrid}>
-          {mockProducts.slice(0, 3).map((p) => (
+          {mockProducts.map((p) => (
             <div key={p.id} className={styles.productTile}>
               {p.badge && (
                 <span className={`${styles.tileBadge} ${p.badge === "IN STOCK" ? styles.tileBadgeGreen : styles.tileBadgeGold}`}>
                   {p.badge}
                 </span>
               )}
-              <div className={styles.tileEmoji}>🕶️</div>
+              <div className={styles.tileImage}>
+                <EyewearSilhouette color="#C9A96E" size={48} />
+              </div>
               <div className={styles.tileBrand}>{p.brand}</div>
               <div className={styles.tileName}>{p.name}</div>
+              <div className={styles.tilePrice}>${p.price}</div>
             </div>
           ))}
 
           {/* Bespoke consultation item */}
           <div className={`${styles.productTile} ${styles.productTileDashed}`}>
-            <div className={styles.tileEmoji} style={{ fontSize: 24, opacity: 0.3 }}>✨</div>
+            <div className={styles.tileImage}>
+              <Sparkles size={24} color="var(--color-gold)" opacity={0.6} />
+            </div>
             <div className={styles.tileConsult}>BESPOKE CONSULTATION ITEM</div>
           </div>
         </div>
@@ -77,21 +85,23 @@ export default function POSPage() {
             <button type="button" className={styles.resetBag}>RESET BAG</button>
           </div>
 
-          {/* Client */}
+          {/* Client Selection */}
           <div className={styles.clientRow}>
             <div className={styles.clientAvatar}>SJ</div>
-            <div>
+            <div className={styles.clientMeta}>
               <div className={styles.clientName}>{selectedClient.name}</div>
               <div className={styles.clientTier}>{selectedClient.tier}</div>
             </div>
-            <span className={styles.chevron}>›</span>
+            <ChevronRight size={16} className={styles.chevron} />
           </div>
 
           {/* Cart Items */}
           <div className={styles.cartItems}>
             {cartItems.map((item) => (
               <div key={item.id} className={styles.cartItem}>
-                <div className={styles.cartItemImg}>🕶️</div>
+                <div className={styles.cartItemImg}>
+                  <EyewearSilhouette color="#C9A96E" size={36} />
+                </div>
                 <div className={styles.cartItemInfo}>
                   <div className={styles.cartItemName}>{item.name}</div>
                   <div className={styles.cartItemDesc}>{item.desc}</div>
@@ -106,7 +116,9 @@ export default function POSPage() {
                 </div>
                 <div className={styles.cartItemRight}>
                   <span className={styles.cartItemPrice}>${item.price.toFixed(2)}</span>
-                  <button type="button" className={styles.deleteBtn}><Trash2 size={14} /></button>
+                  <button type="button" className={styles.deleteBtn} aria-label="Delete item">
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -119,7 +131,9 @@ export default function POSPage() {
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className={styles.totalRow}>
-              <span className={styles.discountLabel}>Atelier Member Discount 🏷️</span>
+              <span className={styles.discountLabel}>
+                <Tag size={12} /> Atelier Member Discount
+              </span>
               <span className={styles.discountValue}>-${discount.toFixed(2)}</span>
             </div>
             <div className={`${styles.totalRow} ${styles.grandTotalRow}`}>
@@ -131,11 +145,12 @@ export default function POSPage() {
           {/* Payment Methods */}
           <div className={styles.paymentMethods}>
             <button type="button" className={`${styles.payBtn} ${styles.payBtnActive}`}>
-              <ShoppingBag size={18} />
-              DEBIT/CREDIT
+              <CreditCard size={18} />
+              DEBIT / CREDIT
             </button>
             <button type="button" className={styles.payBtn}>
-              🏦 WIRE TRANSFER
+              <Building2 size={18} />
+              WIRE TRANSFER
             </button>
           </div>
 

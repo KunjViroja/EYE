@@ -3,7 +3,7 @@ import { mockClients } from "@/lib/mockData";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./ClientelePage.module.css";
 import { Phone, Mail, MapPin, ArrowLeft, Download } from "lucide-react";
-import Link from "next/link";
+import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 
 export const metadata: Metadata = { title: "Clientele" };
 
@@ -144,7 +144,9 @@ export default function ClientelePage() {
               <div className={styles.acquisitionsList}>
                 {client.acquisitions.map((acq) => (
                   <div key={acq.id} className={styles.acquisitionRow}>
-                    <div className={styles.acqImg}>🕶️</div>
+                    <div className={styles.acqImg}>
+                      <EyewearSilhouette color="#C9A96E" size={36} />
+                    </div>
                     <div className={styles.acqInfo}>
                       <div className={styles.acqProduct}>{acq.product}</div>
                       <div className={styles.acqDesc}>{acq.description}</div>

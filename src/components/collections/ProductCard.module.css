@@ -4,31 +4,38 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-base), transform var(--transition-base);
+  transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
   cursor: pointer;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+  border-color: rgba(201, 169, 110, 0.4);
 }
 
 /* ─── Image Area ────────────────────────────────────────────────────────── */
 .imageWrap {
   position: relative;
-  aspect-ratio: 4 / 3;     /* Fixed aspect ratio — always same shape */
-  background: var(--color-border-light);
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
   overflow: hidden;
-}
-
-.imagePlaceholder {
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  background: linear-gradient(135deg, #f8f9fa, #e5e7eb);
+}
+
+.silhouette {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--transition-base);
+}
+
+.card:hover .silhouette {
+  transform: scale(1.05);
 }
 
 /* Badge overlay on image */
@@ -47,6 +54,7 @@
 .badgeNew {
   background: var(--color-navy);
   color: var(--color-gold);
+  border: 1px solid rgba(201, 169, 110, 0.3);
 }
 
 .badgeLow {
@@ -67,32 +75,42 @@
 /* ─── Card Body ─────────────────────────────────────────────────────────── */
 .body {
   padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-1);
 }
 
 .brand {
   font-size: 10px;
   font-weight: var(--font-bold);
   letter-spacing: 0.12em;
-  color: var(--color-gold);
+  color: var(--color-gold-dark);
   text-transform: uppercase;
 }
 
 .sku {
   font-size: 10px;
   color: var(--color-text-light);
-  font-family: "Courier New", monospace; /* Monospace for SKU codes — easier to read */
+  font-family: var(--font-sans);
+  letter-spacing: 0.04em;
 }
 
 .productName {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  line-height: 1.3;
+  line-height: 1.35;
+}
+
+.price {
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin-top: 4px;
 }

@@ -61,10 +61,14 @@ export default function InsightsPage() {
 
       {/* Page Body */}
       <div className={shellStyles.pageBody}>
-        {/* Stats Grid — 4 metric cards */}
+        {/* Stats Grid — 4 metric cards with stagger animation */}
         <div className={styles.statsGrid}>
-          {mockStats.map((stat) => (
-            <StatCard key={stat.id} data={stat} />
+          {mockStats.map((stat, index) => (
+            <StatCard
+              key={stat.id}
+              data={stat}
+              animationDelay={index * 80}
+            />
           ))}
         </div>
 

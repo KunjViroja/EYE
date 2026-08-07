@@ -12,6 +12,7 @@ import "./globals.css";
 // Global styles apply to the entire app (resets, CSS variables, fonts)
 
 import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 import styles from "@/components/layout/AppShell.module.css";
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
@@ -19,13 +20,13 @@ import styles from "@/components/layout/AppShell.module.css";
 // Good SEO = more traffic when you deploy publicly
 export const metadata: Metadata = {
   title: {
-    default: "Lumina Atelier",
-    template: "%s | Lumina Atelier", // e.g. "Insights | Lumina Atelier"
+    default: "EYE Dashboard",
+    template: "%s | EYE Dashboard",
   },
   description:
-    "Premium eyewear boutique management dashboard — inventory, clientele, sales and executive insights.",
+    "Premium eyewear boutique management — inventory, clientele, POS and executive insights.",
   robots: {
-    index: false,  // Don't let search engines index this (it's an internal tool)
+    index: false,
     follow: false,
   },
 };
@@ -45,13 +46,19 @@ export default function RootLayout({
       */}
       <body>
         <div className={styles.appShell}>
-          {/* Sidebar is rendered on EVERY page because it's in the root layout */}
+          {/* Sidebar — always visible, fixed left */}
           <Sidebar />
 
-          {/* Main content area — each page's content renders here */}
-          <main className={styles.mainContent} id="main-content">
-            {children}
-          </main>
+          {/* Right side: Topbar + page content */}
+          <div className={styles.rightPane}>
+            {/* Topbar — sticky across all pages */}
+            <Topbar />
+
+            {/* Page content area */}
+            <main className={styles.mainContent} id="main-content">
+              {children}
+            </main>
+          </div>
         </div>
       </body>
     </html>

@@ -8,9 +8,6 @@ import { Search, SlidersHorizontal, Plus } from "lucide-react";
 export const metadata: Metadata = { title: "Collections" };
 
 export default function CollectionsPage() {
-  const totalValue = mockProducts.reduce((sum, p) => sum + p.price, 0);
-  const lowStock = mockProducts.filter((p) => p.badge === "ONLY 2 LEFT").length;
-
   return (
     <div>
       {/* Page Header */}
@@ -18,7 +15,7 @@ export default function CollectionsPage() {
         <div className={shellStyles.pageHeaderLeft}>
           <h1 className={shellStyles.pageTitle}>Curated Collections</h1>
           <p className={shellStyles.pageSubtitle}>
-            Manage your atelier&apos;s luxury inventory and designer stock.
+            Manage your boutique&apos;s luxury inventory and designer stock.
           </p>
         </div>
         <div className={shellStyles.pageHeaderRight}>
@@ -33,20 +30,20 @@ export default function CollectionsPage() {
         {/* Stats Row */}
         <div className={styles.statsRow}>
           <div className={styles.stat}>
-            <span className={styles.statValue}>{mockProducts.length.toLocaleString()}</span>
+            <span className={styles.statValue}>1,280</span>
             <span className={styles.statLabel}>
               Total Masterpieces <span className={styles.statUnit}>Units</span>
             </span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>
-            <span className={styles.statValue}>${(totalValue / 1000).toFixed(0)}k</span>
+            <span className={styles.statValue}>$842k</span>
             <span className={styles.statLabel}>Portfolio Value</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>
             <span className={`${styles.statValue} ${styles.statDanger}`}>
-              {lowStock}
+              12
             </span>
             <span className={styles.statLabel}>
               Awaiting Curation <span className={styles.statLow}>Low stock</span>

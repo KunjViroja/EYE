@@ -1,38 +1,40 @@
 import type { Product } from "@/lib/mockData";
 import styles from "./ProductCard.module.css";
+import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 
-interface Props {
-  product: Product;
-}
+interface Props { product: Product }
 
-// Map badge text to CSS class
+// Badge styles per type
 const BADGE_CLASSES: Record<string, string> = {
   "NEW SEASON": styles.badgeNew,
   "ONLY 2 LEFT": styles.badgeLow,
-  LIMITED: styles.badgeLimited,
-  "IN STOCK": styles.badgeInStock,
+  "LIMITED":    styles.badgeLimited,
+  "IN STOCK":   styles.badgeInStock,
 };
 
-// Emoji stand-in for missing product images
-const BRAND_EMOJI: Record<string, string> = {
-  "OLIVER PEOPLES": "🕶️",
-  CARTIER: "💛",
-  "TOM FORD": "🌹",
-  PRADA: "⚡",
-  GUCCI: "🌿",
-  "RAY-BAN": "☀️",
+// Silhouette color per brand — adds visual variety between cards
+const BRAND_COLORS: Record<string, string> = {
+  "OLIVER PEOPLES": "#C9A96E",
+  "CARTIER":        "#D4A853",
+  "TOM FORD":       "#8B7355",
+  "PRADA":          "#6B7280",
+  "GUCCI":          "#4B5563",
+  "RAY-BAN":        "#C9A96E",
 };
 
 export default function ProductCard({ product }: Props) {
+  const silhouetteColor = BRAND_COLORS[product.brand] ?? "#C9A96E";
+
   return (
     <article className={styles.card} aria-label={`${product.brand} ${product.name}`}>
-      {/* Image / placeholder area */}
+      {/* Image area */}
       <div className={styles.imageWrap}>
-        <div className={styles.imagePlaceholder} aria-hidden="true">
-          {BRAND_EMOJI[product.brand] ?? "🕶️"}
+        {/* Elegant SVG silhouette — replaces grey box + emoji */}
+        <div className={styles.silhouette}>
+          <EyewearSilhouette color={silhouetteColor} size={64} />
         </div>
 
-        {/* Badge — only rendered if product has one */}
+        {/* Badge overlay */}
         {product.badge && (
           <span className={`${styles.badge} ${BADGE_CLASSES[product.badge]}`}>
             {product.badge}
@@ -47,6 +49,7 @@ export default function ProductCard({ product }: Props) {
           <span className={styles.sku}>SKU: {product.sku}</span>
         </div>
         <h3 className={styles.productName}>{product.name}</h3>
+        <div className={styles.price}>${product.price.toLocaleString()}</div>
       </div>
     </article>
   );
