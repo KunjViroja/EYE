@@ -149,9 +149,31 @@
   100% { background-position: 200% 0; }
 }
 
+/* ─── Pulse & Pulse Glow Animations ─────────────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(5, 150, 105, 0);
+  }
+}
+
+@keyframes goldPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
 /* Utility animation classes */
 .animate-fadeInUp { animation: fadeInUp 0.4s ease forwards; }
 .animate-fadeIn   { animation: fadeIn 0.3s ease forwards; }
+.animate-scaleIn  { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* ─── Reset & Base ───────────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -193,10 +215,10 @@ input, select, textarea { font-family: var(--font-sans); }
 img { max-width: 100%; display: block; }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-light); }
+::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
 
 /* ─── Focus ──────────────────────────────────────────────────────────────── */
 :focus-visible {
@@ -210,3 +232,18 @@ img { max-width: 100%; display: block; }
   background-color: var(--color-gold-muted-strong);
   color: var(--color-text-primary);
 }
+
+/* ─── Utility classes ────────────────────────────────────────────────────── */
+.gold-text-gradient {
+  background: linear-gradient(135deg, var(--color-gold-light) 0%, var(--color-gold) 50%, var(--color-gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+

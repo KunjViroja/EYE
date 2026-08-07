@@ -68,7 +68,7 @@ export default function AuthForm() {
     <div className={styles.formCard}>
       <div className={styles.formHeader}>
         <h2 className={styles.formTitle}>
-          {mode === "signin" ? "Atelier Portal" : "Join the Atelier"}
+          {mode === "signin" ? "EYE Portal" : "Join EYE"}
         </h2>
         <p className={styles.formSubtitle}>
           {mode === "signin"
@@ -214,7 +214,7 @@ export default function AuthForm() {
                 ? "Signing in…"
                 : "Generating Verification…"
               : mode === "signin"
-              ? "Sign In to Atelier"
+              ? "Sign In to EYE"
               : "Register & Send Verification"}
           </button>
         </form>

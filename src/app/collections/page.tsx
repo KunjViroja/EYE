@@ -47,7 +47,7 @@ export default function CollectionsPage() {
         <div className={shellStyles.pageHeaderLeft}>
           <h1 className={shellStyles.pageTitle}>Curated Collections</h1>
           <p className={shellStyles.pageSubtitle}>
-            Manage your boutique&apos;s luxury inventory and designer stock live in Supabase.
+            Manage luxury inventory and curated designer catalog.
           </p>
         </div>
         <div className={shellStyles.pageHeaderRight}>
@@ -58,7 +58,7 @@ export default function CollectionsPage() {
             id="collections-new-creation"
           >
             <Plus size={16} />
-            New Creation
+            New Product
           </button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function CollectionsPage() {
           <div className={styles.stat}>
             <span className={styles.statValue}>{products.length.toLocaleString()}</span>
             <span className={styles.statLabel}>
-              Total Masterpieces <span className={styles.statUnit}>Units</span>
+              Total Items <span className={styles.statUnit}>Units</span>
             </span>
           </div>
           <div className={styles.divider} />
@@ -114,7 +114,7 @@ export default function CollectionsPage() {
         {loading ? (
           <div className={styles.loadingState}>
             <RefreshCw size={24} className={styles.spin} />
-            <span>Fetching live creations from Supabase…</span>
+            <span>Fetching catalog items…</span>
           </div>
         ) : products.length === 0 ? (
           <div className={styles.emptyState}>

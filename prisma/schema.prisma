@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -79,7 +78,7 @@ enum ProductBadge {
 }
 
 enum MemberTier {
-  ELITE_ATELIER_MEMBER
+  ELITE_EYE_MEMBER
   PREMIUM_MEMBER
   STANDARD_MEMBER
 }
@@ -98,17 +97,26 @@ enum PaymentMethod {
 }
 
 model Product {
-  id        String          @id @default(cuid())
-  brand     String
-  name      String
-  sku       String          @unique
-  price     Float
-  imageUrl  String?
-  category  ProductCategory @default(FRAMES)
-  badge     ProductBadge?
-  stock     Int             @default(10)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  brand         String
+  name          String
+  sku           String          @unique
+  price         Float
+  costPrice     Float?
+  imageUrl      String?
+  category      ProductCategory @default(FRAMES)
+  badge         ProductBadge?
+  stock         Int             @default(10)
+  frameMaterial String?
+  frameShape    String?
+  frameType     String?
+  color         String?
+  lensWidth     Int?
+  bridgeWidth   Int?
+  templeLength  Int?
+  gender        String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   saleItems SaleItem[]
 }
@@ -118,9 +126,13 @@ model Client {
   name                  String
   email                 String        @unique
   phone                 String?
+  secondaryPhone        String?
+  dob                   String?
+  gender                String?
   location              String?
-  tier                  MemberTier    @default(ELITE_ATELIER_MEMBER)
+  tier                  MemberTier    @default(ELITE_EYE_MEMBER)
   stylePreference       String?
+  medicalNotes          String?
   prescriptionMilestone String?
   totalSpent            Float         @default(0)
   createdAt             DateTime      @default(now())
@@ -131,19 +143,32 @@ model Client {
 }
 
 model Prescription {
-  id           String   @id @default(cuid())
-  clientId     String
-  lastVerified DateTime @default(now())
-  rightSph     Float    @default(0)
-  rightCyl     Float    @default(0)
-  rightAxis    Int      @default(0)
-  rightAdd     Float    @default(0)
-  leftSph      Float    @default(0)
-  leftCyl      Float    @default(0)
-  leftAxis     Int      @default(0)
-  leftAdd      Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  clientId       String
+  lastVerified   DateTime @default(now())
+  rightSph       Float    @default(0)
+  rightCyl       Float    @default(0)
+  rightAxis      Int      @default(0)
+  rightAdd       Float    @default(0)
+  leftSph        Float    @default(0)
+  leftCyl        Float    @default(0)
+  leftAxis       Int      @default(0)
+  leftAdd        Float    @default(0)
+  pdBinocular    Float?
+  pdRight        Float?
+  pdLeft         Float?
+  segHeightRight Float?
+  segHeightLeft  Float?
+  rightPrism     Float?
+  rightBase      String?
+  leftPrism      Float?
+  leftBase       String?
+  lensType       String?
+  lensIndex      String?
+  lensCoating    String?
+  opticianNotes  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }

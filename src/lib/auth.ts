@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials.password as string;
 
         try {
-          // Query live Supabase database for user record
+          // Query live database for user record
           const dbUser = await prisma.user.findUnique({
             where: { email },
           });
@@ -45,7 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           return {
             id: dbUser.id,
-            name: dbUser.name || "Atelier Member",
+            name: dbUser.name || "EYE Member",
             email: dbUser.email,
             image: dbUser.image || undefined,
             role: dbUser.role || "MANAGER",

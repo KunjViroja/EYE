@@ -55,7 +55,7 @@ export async function seedSampleData() {
         email: `sofia.${Date.now()}@luxury.com`,
         phone: "+1 (555) 012-3456",
         location: "Bel Air Estates, Los Angeles",
-        tier: MemberTier.ELITE_ATELIER_MEMBER,
+        tier: MemberTier.ELITE_EYE_MEMBER,
         stylePreference: '"Prefers oversized acetate frames in tortoiseshell."',
         prescriptionMilestone: "Stable for 2 years. Upgraded to Zeiss Elite Progressive Lenses.",
         totalSpent: 4842.0,
@@ -80,7 +80,7 @@ export async function seedSampleData() {
     revalidatePath("/clientele");
     revalidatePath("/insights");
 
-    return { success: true, message: "Sample boutique data populated in Supabase!" };
+    return { success: true, message: "Sample boutique data populated successfully!" };
   } catch (error: any) {
     console.error("Error seeding sample data:", error);
     return { success: false, error: error.message || "Failed to seed sample data" };

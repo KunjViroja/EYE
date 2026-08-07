@@ -3,8 +3,8 @@ import { Eye, ShieldCheck, Sparkles } from "lucide-react";
 import styles from "./LoginPage.module.css";
 
 export const metadata = {
-  title: "Atelier Portal — EYE Luxury Management",
-  description: "Executive access portal for EYE Luxury Eyewear Atelier",
+  title: "EYE Portal — EYE Management",
+  description: "Executive access portal for EYE Luxury Eyewear",
 };
 
 export default function LoginPage() {
@@ -21,7 +21,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className={styles.brandTitle}>EYE</h1>
-            <p className={styles.brandSubtitle}>Lumina Atelier</p>
+            <p className={styles.brandSubtitle}>EYE Portal</p>
           </div>
         </div>
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
         <footer className={styles.leftFooter}>
           <div className={styles.nodeStatus}>
             <span className={styles.nodeDot} />
-            <span>Supabase PostgreSQL Node Active</span>
+            <span>EYE Executive System Active</span>
           </div>
           <span>© 2026 EYE Inc.</span>
         </footer>

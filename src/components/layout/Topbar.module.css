@@ -138,29 +138,25 @@
   align-items: center;
   gap: var(--space-2);
   padding: 4px 10px;
-  background: var(--color-gold-muted);
-  border: 1px solid rgba(201, 169, 110, 0.3);
+  background: var(--color-success-bg);
+  border: 1px solid rgba(5, 150, 105, 0.25);
   border-radius: var(--radius-full);
   cursor: default;
 }
 
 .sessionDot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: var(--radius-full);
-  background: var(--color-gold);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  background: var(--color-success);
+  animation: pulseGlow 2s infinite ease-in-out;
 }
 
 .sessionLabel {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: var(--font-semibold);
-  color: var(--color-gold-dark);
+  color: var(--color-success);
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
+

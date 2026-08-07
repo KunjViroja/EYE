@@ -12,9 +12,9 @@ export default function SettingsPage() {
     <div>
       <div className={shellStyles.pageHeader}>
         <div className={shellStyles.pageHeaderLeft}>
-          <h1 className={shellStyles.pageTitle}>Atelier Settings</h1>
+          <h1 className={shellStyles.pageTitle}>EYE Settings</h1>
           <p className={shellStyles.pageSubtitle}>
-            Manage boutique account credentials and Supabase database status.
+            Manage account credentials and system connection status.
           </p>
         </div>
       </div>
@@ -25,14 +25,14 @@ export default function SettingsPage() {
           <div className={styles.cardHeader}>
             <div>
               <h2 className={styles.title}>Account Overview</h2>
-              <p className={styles.subtitle}>Current logged-in boutique session</p>
+              <p className={styles.subtitle}>Current logged-in executive session</p>
             </div>
             <User size={20} color="var(--color-gold-dark)" />
           </div>
 
           <div className={styles.infoRow}>
             <span className={styles.infoLabel}>Account Name</span>
-            <span className={styles.infoValue}>{session?.user?.name || "Boutique Manager"}</span>
+            <span className={styles.infoValue}>{session?.user?.name || "Manager"}</span>
           </div>
 
           <div className={styles.infoRow}>
@@ -51,19 +51,19 @@ export default function SettingsPage() {
           <div className={styles.cardHeader}>
             <div>
               <h2 className={styles.title}>Database Status</h2>
-              <p className={styles.subtitle}>Live Supabase PostgreSQL Connection</p>
+              <p className={styles.subtitle}>Live Enterprise Cloud Connection</p>
             </div>
             <ShieldCheck size={20} color="var(--color-success)" />
           </div>
 
           <div className={styles.infoRow}>
             <span className={styles.infoLabel}>Database Engine</span>
-            <span className={styles.infoValue}>Supabase PostgreSQL (Prisma 7)</span>
+            <span className={styles.infoValue}>Enterprise Cloud Database</span>
           </div>
 
           <div className={styles.infoRow}>
             <span className={styles.infoLabel}>Connection Security</span>
-            <span className={styles.infoValue}>SSL Enabled (Port 6543 / 5432)</span>
+            <span className={styles.infoValue}>TLS/SSL Encrypted (Port 5432)</span>
           </div>
         </div>
       </div>

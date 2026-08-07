@@ -57,10 +57,10 @@ export default function Topbar() {
 
         <span className={styles.divider} aria-hidden="true" />
 
-        {/* Live Supabase connection indicator */}
-        <div className={styles.sessionPill} title="Connected to live Supabase PostgreSQL database">
+        {/* Live system connection indicator */}
+        <div className={styles.sessionPill} title="Connected to EYE Cloud Node">
           <span className={styles.sessionDot} />
-          <span className={styles.sessionLabel}>Supabase Connected</span>
+          <span className={styles.sessionLabel}>System Connected</span>
         </div>
       </div>
     </header>

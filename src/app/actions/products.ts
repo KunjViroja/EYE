@@ -9,12 +9,21 @@ export interface CreateProductInput {
   name: string;
   sku: string;
   price: number;
+  costPrice?: number;
   category: ProductCategory;
   badge?: ProductBadge | null;
   stock?: number;
+  frameMaterial?: string;
+  frameShape?: string;
+  frameType?: string;
+  color?: string;
+  lensWidth?: number;
+  bridgeWidth?: number;
+  templeLength?: number;
+  gender?: string;
 }
 
-// ─── Fetch All Products from Supabase ────────────────────────────────────────
+// ─── Fetch All Products ───────────────────────────────────────────────────────
 export async function getProducts(category?: string, query?: string) {
   try {
     const where: any = {};
@@ -28,6 +37,9 @@ export async function getProducts(category?: string, query?: string) {
         { brand: { contains: query, mode: "insensitive" } },
         { name: { contains: query, mode: "insensitive" } },
         { sku: { contains: query, mode: "insensitive" } },
+        { frameMaterial: { contains: query, mode: "insensitive" } },
+        { frameShape: { contains: query, mode: "insensitive" } },
+        { color: { contains: query, mode: "insensitive" } },
       ];
     }
 
@@ -43,7 +55,7 @@ export async function getProducts(category?: string, query?: string) {
   }
 }
 
-// ─── Create Product in Supabase ──────────────────────────────────────────────
+// ─── Create Product ───────────────────────────────────────────────────────────
 export async function createProduct(input: CreateProductInput) {
   try {
     if (!input.brand || !input.name || !input.sku || !input.price) {
@@ -64,9 +76,18 @@ export async function createProduct(input: CreateProductInput) {
         name: input.name,
         sku: input.sku.toUpperCase(),
         price: Number(input.price),
+        costPrice: input.costPrice ? Number(input.costPrice) : undefined,
         category: input.category || ProductCategory.FRAMES,
         badge: input.badge || null,
         stock: input.stock ? Number(input.stock) : 10,
+        frameMaterial: input.frameMaterial || undefined,
+        frameShape: input.frameShape || undefined,
+        frameType: input.frameType || undefined,
+        color: input.color || undefined,
+        lensWidth: input.lensWidth ? Number(input.lensWidth) : undefined,
+        bridgeWidth: input.bridgeWidth ? Number(input.bridgeWidth) : undefined,
+        templeLength: input.templeLength ? Number(input.templeLength) : undefined,
+        gender: input.gender || "Unisex",
       },
     });
 

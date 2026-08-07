@@ -39,7 +39,7 @@ function VerifyEmailContent() {
       {loading ? (
         <div style={{ padding: "24px 0", color: "#D4AF37", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <RefreshCw size={32} className={styles.spin} />
-          <span>Validating security token with Supabase…</span>
+          <span>Validating security token…</span>
         </div>
       ) : success ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "16px 0" }}>

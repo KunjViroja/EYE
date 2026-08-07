@@ -45,7 +45,7 @@ export async function registerUserWithVerification(input: RegisterUserInput) {
         password: hashedPassword || undefined,
       },
       create: {
-        name: input.name || "Atelier Member",
+        name: input.name || "EYE Member",
         email,
         password: hashedPassword,
         role: Role.MANAGER,

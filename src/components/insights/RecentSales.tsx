@@ -46,7 +46,7 @@ export default function RecentSales({ sales }: Props) {
               </div>
 
               <div className={styles.right}>
-                <span className={styles.amount}>${sale.amount.toLocaleString()}.00</span>
+                <span className={styles.amount}>₹{sale.amount.toLocaleString("en-IN")}</span>
                 <span className={`${styles.status} ${STATUS_CLASS[sale.status] || styles.statusCompleted}`}>
                   {sale.status}
                 </span>

@@ -40,7 +40,7 @@ export default function ClientelePage() {
         <div className={shellStyles.pageHeaderLeft}>
           <h1 className={shellStyles.pageTitle}>Client Portfolio</h1>
           <p className={shellStyles.pageSubtitle}>
-            Manage luxury client profiles, vision blueprints, and acquisition history live in Supabase.
+            Manage client profiles, vision blueprints, and acquisition history in real-time.
           </p>
         </div>
         <div className={shellStyles.pageHeaderRight}>
@@ -68,11 +68,11 @@ export default function ClientelePage() {
         {loading ? (
           <div className={styles.loadingState}>
             <RefreshCw size={24} className={styles.spin} />
-            <span>Fetching live client records from Supabase…</span>
+            <span>Loading client records…</span>
           </div>
         ) : !client ? (
           <div className={styles.emptyState}>
-            <p>No client records found in Supabase.</p>
+            <p>No client records found.</p>
             <button type="button" className={styles.sessionBtn} onClick={() => setIsClientModalOpen(true)}>
               + Register First Client
             </button>
@@ -137,21 +137,27 @@ export default function ClientelePage() {
                   </div>
                   <div className={styles.contactRow}>
                     <MapPin size={13} />
-                    <span>{client.location}</span>
+                    <span>{client.location || "Location Not Provided"}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Stylist Curations */}
+              {/* Stylist Curations & Medical Notes */}
               <div className={styles.curationsCard}>
-                <div className={styles.curationsLabel}>STYLIST CURATIONS</div>
+                <div className={styles.curationsLabel}>STYLIST CURATIONS & EYE HEALTH</div>
                 <div className={styles.curationItem}>
                   <div className={styles.curationTitle}>Style Preference</div>
                   <p className={styles.curationText}>{client.stylePreference || "Classic luxury acetate frames."}</p>
                 </div>
+                {client.medicalNotes && (
+                  <div className={styles.curationItem}>
+                    <div className={styles.curationTitle}>Medical Notes</div>
+                    <p className={styles.curationText}>{client.medicalNotes}</p>
+                  </div>
+                )}
                 <div className={styles.curationItem}>
                   <div className={`${styles.curationTitle} ${styles.curationTitleGold}`}>Prescription Milestone</div>
-                  <p className={styles.curationText}>{client.prescriptionMilestone || "Stable prescription."}</p>
+                  <p className={styles.curationText}>{client.prescriptionMilestone || "Initial blueprint active."}</p>
                 </div>
               </div>
             </div>
@@ -164,7 +170,7 @@ export default function ClientelePage() {
                   <div>
                     <h2 className={styles.visionTitle}>Vision Blueprint</h2>
                     <p className={styles.visionDate}>
-                      Verified {activeRx ? new Date(activeRx.lastVerified).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Oct 24, 2024"}
+                      Verified {activeRx ? new Date(activeRx.lastVerified).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Active Profile"}
                     </p>
                   </div>
                   <button
@@ -186,19 +192,19 @@ export default function ClientelePage() {
                     </div>
                     <div className={styles.rxValues}>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>{activeRx ? (activeRx.rightSph > 0 ? `+${activeRx.rightSph}` : activeRx.rightSph) : "-2.75"}</div>
+                        <div className={styles.rxNum}>{activeRx ? (activeRx.rightSph > 0 ? `+${activeRx.rightSph}` : activeRx.rightSph) : "0.00"}</div>
                         <div className={styles.rxKey}>SPH</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>{activeRx ? (activeRx.rightCyl > 0 ? `+${activeRx.rightCyl}` : activeRx.rightCyl) : "-0.5"}</div>
+                        <div className={styles.rxNum}>{activeRx ? (activeRx.rightCyl > 0 ? `+${activeRx.rightCyl}` : activeRx.rightCyl) : "0.00"}</div>
                         <div className={styles.rxKey}>CYL</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>+{activeRx ? activeRx.rightAxis : 180}</div>
+                        <div className={styles.rxNum}>{activeRx ? activeRx.rightAxis : 180}°</div>
                         <div className={styles.rxKey}>AXIS</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>+{activeRx ? activeRx.rightAdd : 1.5}</div>
+                        <div className={styles.rxNum}>+{activeRx ? activeRx.rightAdd : 0}</div>
                         <div className={styles.rxKey}>ADD</div>
                       </div>
                     </div>
@@ -212,30 +218,46 @@ export default function ClientelePage() {
                     </div>
                     <div className={styles.rxValues}>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>{activeRx ? (activeRx.leftSph > 0 ? `+${activeRx.leftSph}` : activeRx.leftSph) : "-3"}</div>
+                        <div className={styles.rxNum}>{activeRx ? (activeRx.leftSph > 0 ? `+${activeRx.leftSph}` : activeRx.leftSph) : "0.00"}</div>
                         <div className={styles.rxKey}>SPH</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>{activeRx ? (activeRx.leftCyl > 0 ? `+${activeRx.leftCyl}` : activeRx.leftCyl) : "-0.75"}</div>
+                        <div className={styles.rxNum}>{activeRx ? (activeRx.leftCyl > 0 ? `+${activeRx.leftCyl}` : activeRx.leftCyl) : "0.00"}</div>
                         <div className={styles.rxKey}>CYL</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>+{activeRx ? activeRx.leftAxis : 175}</div>
+                        <div className={styles.rxNum}>{activeRx ? activeRx.leftAxis : 180}°</div>
                         <div className={styles.rxKey}>AXIS</div>
                       </div>
                       <div className={styles.rxValue}>
-                        <div className={styles.rxNum}>+{activeRx ? activeRx.leftAdd : 1.5}</div>
+                        <div className={styles.rxNum}>+{activeRx ? activeRx.leftAdd : 0}</div>
                         <div className={styles.rxKey}>ADD</div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Additional Optical Blueprint Details */}
+                <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", fontSize: "12px" }}>
+                  <div>
+                    <span style={{ color: "rgba(255,255,255,0.5)", display: "block", fontSize: "10px", fontWeight: "bold" }}>PUPILLARY DISTANCE (PD)</span>
+                    <span style={{ color: "#fff", fontWeight: "600" }}>{activeRx?.pdBinocular || 63} mm (Binocular)</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "rgba(255,255,255,0.5)", display: "block", fontSize: "10px", fontWeight: "bold" }}>LENS TYPE & INDEX</span>
+                    <span style={{ color: "#fff", fontWeight: "600" }}>{activeRx?.lensType || "Single Vision"} • {activeRx?.lensIndex || "1.60 High-Index"}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "rgba(255,255,255,0.5)", display: "block", fontSize: "10px", fontWeight: "bold" }}>COATINGS & TREATMENT</span>
+                    <span style={{ color: "var(--color-gold)", fontWeight: "600" }}>{activeRx?.lensCoating || "Anti-Reflective AR + BlueProtect"}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Atelier Acquisitions */}
+              {/* EYE Acquisitions */}
               <div className={styles.acquisitionsCard}>
                 <div className={styles.acquisitionsHeader}>
-                  <h3 className={styles.acquisitionsTitle}>Atelier Acquisitions</h3>
+                  <h3 className={styles.acquisitionsTitle}>EYE Acquisitions</h3>
                   <span className={styles.fullLedger}>FULL LEDGER</span>
                 </div>
                 <div className={styles.acquisitionsList}>

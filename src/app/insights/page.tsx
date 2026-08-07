@@ -6,7 +6,7 @@ import StatCard from "@/components/insights/StatCard";
 import RevenueChart from "@/components/insights/RevenueChart";
 import CollectionMixChart from "@/components/insights/CollectionMixChart";
 import RecentSales from "@/components/insights/RecentSales";
-import AtelierAlerts from "@/components/insights/AtelierAlerts";
+import EyeAlerts from "@/components/insights/EyeAlerts";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./InsightsPage.module.css";
 import { RefreshCw } from "lucide-react";
@@ -97,7 +97,7 @@ export default function InsightsPage() {
         <div className={shellStyles.pageHeaderLeft}>
           <h1 className={shellStyles.pageTitle}>Executive Insights</h1>
           <p className={shellStyles.pageSubtitle}>
-            Welcome back, here&apos;s your live atelier performance from Supabase
+            Welcome back, here&apos;s your live EYE performance dashboard
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export default function InsightsPage() {
         {loading ? (
           <div className={styles.loadingState}>
             <RefreshCw size={24} className={styles.spin} />
-            <span>Calculating live metrics from Supabase…</span>
+            <span>Calculating live metrics…</span>
           </div>
         ) : (
           <>
@@ -142,7 +142,7 @@ export default function InsightsPage() {
             {/* Bottom Row */}
             <div className={styles.bottomRow}>
               <RecentSales sales={recentSales} />
-              <AtelierAlerts alerts={alerts} />
+              <EyeAlerts alerts={alerts} />
             </div>
           </>
         )}

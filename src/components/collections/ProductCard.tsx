@@ -53,7 +53,7 @@ export default function ProductCard({ product }: Props) {
           <span className={styles.sku}>SKU: {product.sku}</span>
         </div>
         <h3 className={styles.productName}>{product.name}</h3>
-        <div className={styles.price}>${product.price.toLocaleString()}</div>
+        <div className={styles.price}>${product.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
       </div>
     </article>
   );

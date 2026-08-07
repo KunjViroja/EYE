@@ -39,7 +39,7 @@ export interface RecentSale {
   status: "Completed" | "Processing" | "Pending";
 }
 
-export interface AtelierAlert {
+export interface EyeAlert {
   id: string;
   type: "restock" | "vvip" | "info";
   title: string;
@@ -61,7 +61,7 @@ export interface Product {
 export interface Client {
   id: string;
   name: string;
-  tier: "ELITE ATELIER MEMBER" | "PREMIUM CLIENT" | "ATELIER MEMBER";
+  tier: "ELITE EYE MEMBER" | "PREMIUM CLIENT" | "EYE MEMBER";
   totalSpent: number;
   itemsOwned: number;
   phone: string;
@@ -169,7 +169,7 @@ export const mockRecentSales: RecentSale[] = [
   },
 ];
 
-export const mockAlerts: AtelierAlert[] = [
+export const mockAlerts: EyeAlert[] = [
   {
     id: "alert-1",
     type: "restock",
@@ -251,7 +251,7 @@ export const mockClients: Client[] = [
   {
     id: "client-1",
     name: "Sofia Jensen",
-    tier: "ELITE ATELIER MEMBER",
+    tier: "ELITE EYE MEMBER",
     totalSpent: 4842,
     itemsOwned: 12,
     phone: "+1 (555) 012-3456",

@@ -1,7 +1,7 @@
-import styles from "./AtelierAlerts.module.css";
+import styles from "./EyeAlerts.module.css";
 import { Zap, Package, Star } from "lucide-react";
 
-export interface AtelierAlertItem {
+export interface EyeAlertItem {
   id: string;
   type: "restock" | "vvip" | "info";
   title: string;
@@ -10,7 +10,7 @@ export interface AtelierAlertItem {
 }
 
 interface Props {
-  alerts: AtelierAlertItem[];
+  alerts: EyeAlertItem[];
 }
 
 const ALERT_ICONS = {
@@ -19,11 +19,11 @@ const ALERT_ICONS = {
   info: Zap,
 };
 
-export default function AtelierAlerts({ alerts }: Props) {
+export default function EyeAlerts({ alerts }: Props) {
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Atelier Alerts</h3>
+        <h3 className={styles.title}>EYE Alerts</h3>
         <Zap size={16} color="var(--color-gold)" />
       </div>
 

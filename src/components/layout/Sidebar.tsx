@@ -39,8 +39,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  const userName = session?.user?.name || "Julianne Moore";
-  const userRole = (session?.user as any)?.role || "Boutique Manager";
+  const userName = session?.user?.name || "Executive User";
+  const userRole = (session?.user as any)?.role || "Manager";
 
   return (
     <aside className={styles.sidebar} aria-label="Main navigation">

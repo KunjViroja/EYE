@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function getInsightsData() {
   try {
-    // 1. Calculate Gross Revenue & Total Sales Count live from Supabase
+    // 1. Calculate Gross Revenue & Total Sales Count live from database
     const salesAggregate = await prisma.sale.aggregate({
       where: { status: "COMPLETED" },
       _sum: { grandTotal: true },
@@ -15,7 +15,7 @@ export async function getInsightsData() {
     const totalSalesCount = salesAggregate._count.id || 0;
     const avgBoutiqueValue = totalSalesCount > 0 ? Math.round(grossRevenue / totalSalesCount) : 0;
 
-    // 2. Fetch Recent Sales live from Supabase
+    // 2. Fetch Recent Sales live from database
     const recentSalesFromDb = await prisma.sale.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -34,7 +34,7 @@ export async function getInsightsData() {
       status: s.status === "COMPLETED" ? ("Completed" as const) : ("Processing" as const),
     }));
 
-    // 3. Fetch Alerts live from Supabase
+    // 3. Fetch Alerts live from database
     const alertsFromDb = await prisma.alert.findMany({
       take: 3,
       orderBy: { createdAt: "desc" },

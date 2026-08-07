@@ -8,9 +8,13 @@ export interface CreateClientInput {
   name: string;
   email: string;
   phone: string;
+  secondaryPhone?: string;
+  dob?: string;
+  gender?: string;
   location: string;
   tier?: MemberTier;
   stylePreference?: string;
+  medicalNotes?: string;
 }
 
 export interface UpdatePrescriptionInput {
@@ -23,9 +27,22 @@ export interface UpdatePrescriptionInput {
   leftCyl: number;
   leftAxis: number;
   leftAdd: number;
+  pdBinocular?: number;
+  pdRight?: number;
+  pdLeft?: number;
+  segHeightRight?: number;
+  segHeightLeft?: number;
+  rightPrism?: number;
+  rightBase?: string;
+  leftPrism?: number;
+  leftBase?: string;
+  lensType?: string;
+  lensIndex?: string;
+  lensCoating?: string;
+  opticianNotes?: string;
 }
 
-// ─── Fetch Clients from Supabase ─────────────────────────────────────────────
+// ─── Fetch Clients ───────────────────────────────────────────────────────────
 export async function getClients() {
   try {
     const clients = await prisma.client.findMany({
@@ -49,30 +66,36 @@ export async function getClients() {
   }
 }
 
-// ─── Create Client in Supabase ──────────────────────────────────────────────
+// ─── Create Client ────────────────────────────────────────────────────────────
 export async function createClient(input: CreateClientInput) {
   try {
     if (!input.name || !input.email || !input.phone) {
-      return { success: false, error: "Name, email, and phone are required." };
+      return { success: false, error: "Name, email, and primary phone are required." };
     }
 
+    const email = input.email.toLowerCase().trim();
+
     const existing = await prisma.client.findUnique({
-      where: { email: input.email },
+      where: { email },
     });
 
     if (existing) {
-      return { success: false, error: `Client with email "${input.email}" already exists.` };
+      return { success: false, error: `A client with email "${email}" is already registered.` };
     }
 
     const client = await prisma.client.create({
       data: {
         name: input.name,
-        email: input.email,
+        email,
         phone: input.phone,
-        location: input.location || "Los Angeles, CA",
-        tier: input.tier || MemberTier.ATELIER_MEMBER,
-        stylePreference: input.stylePreference || "Classic luxury aesthetics.",
-        prescriptionMilestone: "Initial vision profile created.",
+        secondaryPhone: input.secondaryPhone || undefined,
+        dob: input.dob || undefined,
+        gender: input.gender || "Unspecified",
+        location: input.location || "Location not provided",
+        tier: input.tier || MemberTier.ELITE_EYE_MEMBER,
+        stylePreference: input.stylePreference || "Classic eyewear aesthetics.",
+        medicalNotes: input.medicalNotes || undefined,
+        prescriptionMilestone: "Initial vision blueprint created.",
         prescriptions: {
           create: {
             lastVerified: new Date(),
@@ -84,6 +107,10 @@ export async function createClient(input: CreateClientInput) {
             leftCyl: 0.0,
             leftAxis: 180,
             leftAdd: 0.0,
+            pdBinocular: 63.0,
+            lensType: "Single Vision",
+            lensIndex: "1.60 High-Index",
+            lensCoating: "Anti-Reflective AR + BlueProtect",
           },
         },
       },
@@ -99,7 +126,7 @@ export async function createClient(input: CreateClientInput) {
   }
 }
 
-// ─── Update Vision Prescription in Supabase ─────────────────────────────────
+// ─── Update Vision Prescription Blueprint ─────────────────────────────────────
 export async function updatePrescription(input: UpdatePrescriptionInput) {
   try {
     if (!input.clientId) {
@@ -118,6 +145,19 @@ export async function updatePrescription(input: UpdatePrescriptionInput) {
         leftCyl: Number(input.leftCyl),
         leftAxis: Number(input.leftAxis),
         leftAdd: Number(input.leftAdd),
+        pdBinocular: input.pdBinocular !== undefined ? Number(input.pdBinocular) : undefined,
+        pdRight: input.pdRight !== undefined ? Number(input.pdRight) : undefined,
+        pdLeft: input.pdLeft !== undefined ? Number(input.pdLeft) : undefined,
+        segHeightRight: input.segHeightRight !== undefined ? Number(input.segHeightRight) : undefined,
+        segHeightLeft: input.segHeightLeft !== undefined ? Number(input.segHeightLeft) : undefined,
+        rightPrism: input.rightPrism !== undefined ? Number(input.rightPrism) : undefined,
+        rightBase: input.rightBase || undefined,
+        leftPrism: input.leftPrism !== undefined ? Number(input.leftPrism) : undefined,
+        leftBase: input.leftBase || undefined,
+        lensType: input.lensType || "Single Vision",
+        lensIndex: input.lensIndex || "1.60 High-Index",
+        lensCoating: input.lensCoating || "Anti-Reflective AR",
+        opticianNotes: input.opticianNotes || undefined,
       },
     });
 
