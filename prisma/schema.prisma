@@ -1,30 +1,26 @@
-// EYE — Lumina Atelier Prisma Database Schema
-// Database Provider: PostgreSQL (Supabase)
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// ─── Authentication & User Management ──────────────────────────────────────
 enum Role {
   MANAGER
+  OPTICIAN
   STYLIST
-  STAFF
-  ADMIN
 }
 
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // Hashed password for Credentials provider
-  role          Role      @default(STAFF)
+  password      String?
+  role          Role      @default(MANAGER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -57,8 +53,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -69,56 +64,67 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ─── Product & Inventory ───────────────────────────────────────────────────
 enum ProductCategory {
   FRAMES
-  LENSES
+  BESPOKE_LENSES
   ACCESSORIES
-  CONSULTATION
+  CARE_KITS
 }
 
 enum ProductBadge {
   NEW_SEASON
-  ONLY_2_LEFT
   LIMITED
+  ONLY_2_LEFT
   IN_STOCK
 }
 
+enum MemberTier {
+  ELITE_ATELIER_MEMBER
+  PREMIUM_MEMBER
+  STANDARD_MEMBER
+}
+
+enum SaleStatus {
+  COMPLETED
+  PROCESSING
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  APPLE_PAY
+  WIRE_TRANSFER
+  CASH
+}
+
 model Product {
-  id          String          @id @default(cuid())
-  brand       String
-  name        String
-  sku         String          @unique
-  price       Float
-  imageUrl    String?
-  category    ProductCategory @default(FRAMES)
-  badge       ProductBadge?
-  stock       Int             @default(10)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id        String          @id @default(cuid())
+  brand     String
+  name      String
+  sku       String          @unique
+  price     Float
+  imageUrl  String?
+  category  ProductCategory @default(FRAMES)
+  badge     ProductBadge?
+  stock     Int             @default(10)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   saleItems SaleItem[]
 }
 
-// ─── Clientele & Prescriptions ─────────────────────────────────────────────
-enum MemberTier {
-  ELITE_ATELIER_MEMBER
-  PREMIUM_CLIENT
-  ATELIER_MEMBER
-}
-
 model Client {
-  id                    String     @id @default(cuid())
+  id                    String        @id @default(cuid())
   name                  String
-  email                 String     @unique
-  phone                 String
-  location              String
-  tier                  MemberTier @default(ATELIER_MEMBER)
-  stylePreference       String?    @db.Text
-  prescriptionMilestone String?    @db.Text
-  totalSpent            Float      @default(0.0)
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  email                 String        @unique
+  phone                 String?
+  location              String?
+  tier                  MemberTier    @default(ELITE_ATELIER_MEMBER)
+  stylePreference       String?
+  prescriptionMilestone String?
+  totalSpent            Float         @default(0)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   prescriptions Prescription[]
   sales         Sale[]
@@ -128,81 +134,55 @@ model Prescription {
   id           String   @id @default(cuid())
   clientId     String
   lastVerified DateTime @default(now())
-
-  // Right Eye (OD)
-  rightSph Float @default(0.0)
-  rightCyl Float @default(0.0)
-  rightAxis Int   @default(180)
-  rightAdd Float @default(0.0)
-
-  // Left Eye (OS)
-  leftSph  Float @default(0.0)
-  leftCyl  Float @default(0.0)
-  leftAxis Int   @default(180)
-  leftAdd  Float @default(0.0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  rightSph     Float    @default(0)
+  rightCyl     Float    @default(0)
+  rightAxis    Int      @default(0)
+  rightAdd     Float    @default(0)
+  leftSph      Float    @default(0)
+  leftCyl      Float    @default(0)
+  leftAxis     Int      @default(0)
+  leftAdd      Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
-// ─── Sales & Point of Sale (POS) ───────────────────────────────────────────
-enum SaleStatus {
-  COMPLETED
-  PROCESSING
-  PENDING
-  CANCELLED
-}
-
-enum PaymentMethod {
-  DEBIT_CREDIT
-  WIRE_TRANSFER
-  CASH
-}
-
 model Sale {
   id            String        @id @default(cuid())
-  clientId      String
+  clientId      String?
   userId        String?
   subtotal      Float
-  discount      Float         @default(0.0)
+  discount      Float         @default(0)
   grandTotal    Float
   status        SaleStatus    @default(COMPLETED)
-  paymentMethod PaymentMethod @default(DEBIT_CREDIT)
+  paymentMethod PaymentMethod @default(CREDIT_CARD)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  client Client     @relation(fields: [clientId], references: [id])
+  client Client?    @relation(fields: [clientId], references: [id])
   user   User?      @relation(fields: [userId], references: [id])
   items  SaleItem[]
 }
 
 model SaleItem {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   saleId          String
   productId       String
-  quantity        Int      @default(1)
+  quantity        Int     @default(1)
   unitPrice       Float
-  hasPrescription Boolean  @default(false)
+  hasPrescription Boolean @default(false)
 
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 }
 
-// ─── Alerts & System Notifications ────────────────────────────────────────
-enum AlertType {
-  RESTOCK
-  VVIP
-  INFO
-}
-
 model Alert {
-  id          String    @id @default(cuid())
-  type        AlertType @default(INFO)
+  id          String   @id @default(cuid())
+  type        String
   title       String
   description String
   actionLabel String?
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }

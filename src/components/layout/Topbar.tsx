@@ -5,11 +5,9 @@ import { Bell, Search } from "lucide-react";
 import styles from "./Topbar.module.css";
 
 export default function Topbar() {
-  // Live clock — updates every minute
   const [dateStr, setDateStr] = useState("");
 
   useEffect(() => {
-    // Format: "Thursday, 7 August 2026"
     const format = () =>
       new Date().toLocaleDateString("en-GB", {
         weekday: "long",
@@ -19,8 +17,6 @@ export default function Topbar() {
       });
 
     setDateStr(format());
-
-    // Update at the start of every minute
     const timer = setInterval(() => setDateStr(format()), 60_000);
     return () => clearInterval(timer);
   }, []);
@@ -56,17 +52,15 @@ export default function Topbar() {
           id="topbar-notifications"
         >
           <Bell size={17} strokeWidth={1.8} />
-          {/* Unread badge */}
           <span className={styles.badge} aria-hidden="true">2</span>
         </button>
 
-        {/* Divider */}
         <span className={styles.divider} aria-hidden="true" />
 
-        {/* Session status indicator */}
-        <div className={styles.sessionPill} title="Phase 2: Real auth coming soon">
+        {/* Live Supabase connection indicator */}
+        <div className={styles.sessionPill} title="Connected to live Supabase PostgreSQL database">
           <span className={styles.sessionDot} />
-          <span className={styles.sessionLabel}>Demo Mode</span>
+          <span className={styles.sessionLabel}>Supabase Connected</span>
         </div>
       </div>
     </header>

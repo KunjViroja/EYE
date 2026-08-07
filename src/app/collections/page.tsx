@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getProducts } from "@/app/actions/products";
-import ProductCard from "@/components/collections/ProductCard";
+import ProductCard, { ProductItem } from "@/components/collections/ProductCard";
 import NewProductModal from "@/components/collections/NewProductModal";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./CollectionsPage.module.css";
-import { Search, SlidersHorizontal, Plus, RefreshCw } from "lucide-react";
-import type { Product } from "@/lib/mockData";
+import { Search, Plus, RefreshCw } from "lucide-react";
 
 export default function CollectionsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,15 +18,14 @@ export default function CollectionsPage() {
     setLoading(true);
     const res = await getProducts("All", searchQuery);
     if (res.success && res.data) {
-      // Map Prisma model shape to UI Product shape
-      const mapped: Product[] = res.data.map((p) => ({
+      const mapped: ProductItem[] = res.data.map((p) => ({
         id: p.id,
         brand: p.brand,
         name: p.name,
         sku: p.sku,
         price: p.price,
         imageUrl: p.imageUrl || "/products/default.jpg",
-        badge: (p.badge ? p.badge.replace("_", " ") : undefined) as any,
+        badge: p.badge ? p.badge.replace("_", " ") : undefined,
         category: "Frames",
       }));
       setProducts(mapped);
@@ -40,7 +38,7 @@ export default function CollectionsPage() {
   }, [fetchLiveProducts]);
 
   const totalValue = products.reduce((sum, p) => sum + p.price, 0);
-  const lowStockCount = products.filter((p) => p.badge === ("ONLY 2 LEFT" as any)).length;
+  const lowStockCount = products.filter((p) => p.badge === "ONLY 2 LEFT").length;
 
   return (
     <div>

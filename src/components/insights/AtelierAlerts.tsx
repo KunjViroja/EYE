@@ -1,9 +1,16 @@
-import type { AtelierAlert } from "@/lib/mockData";
 import styles from "./AtelierAlerts.module.css";
 import { Zap, Package, Star } from "lucide-react";
 
+export interface AtelierAlertItem {
+  id: string;
+  type: "restock" | "vvip" | "info";
+  title: string;
+  description: string;
+  actionLabel?: string;
+}
+
 interface Props {
-  alerts: AtelierAlert[];
+  alerts: AtelierAlertItem[];
 }
 
 const ALERT_ICONS = {
@@ -21,25 +28,31 @@ export default function AtelierAlerts({ alerts }: Props) {
       </div>
 
       <div className={styles.list}>
-        {alerts.map((alert) => {
-          const Icon = ALERT_ICONS[alert.type];
-          return (
-            <div key={alert.id} className={styles.alertItem}>
-              <div className={styles.alertIcon}>
-                <Icon size={16} color="var(--color-gold)" />
+        {alerts.length === 0 ? (
+          <div style={{ fontSize: "12px", color: "var(--color-text-muted)", padding: "12px 0" }}>
+            No active alerts at this time.
+          </div>
+        ) : (
+          alerts.map((alert) => {
+            const Icon = ALERT_ICONS[alert.type] || Zap;
+            return (
+              <div key={alert.id} className={styles.alertItem}>
+                <div className={styles.alertIcon}>
+                  <Icon size={16} color="var(--color-gold)" />
+                </div>
+                <div className={styles.alertContent}>
+                  <p className={styles.alertTitle}>{alert.title}</p>
+                  <p className={styles.alertDesc}>{alert.description}</p>
+                  {alert.actionLabel && (
+                    <button className={styles.alertAction} type="button">
+                      {alert.actionLabel}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className={styles.alertContent}>
-                <p className={styles.alertTitle}>{alert.title}</p>
-                <p className={styles.alertDesc}>{alert.description}</p>
-                {alert.actionLabel && (
-                  <button className={styles.alertAction} type="button">
-                    {alert.actionLabel}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

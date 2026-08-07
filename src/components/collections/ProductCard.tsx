@@ -1,10 +1,19 @@
-import type { Product } from "@/lib/mockData";
 import styles from "./ProductCard.module.css";
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 
-interface Props { product: Product }
+export interface ProductItem {
+  id: string;
+  brand: string;
+  name: string;
+  sku: string;
+  price: number;
+  imageUrl?: string;
+  badge?: string;
+  category?: string;
+}
 
-// Badge styles per type
+interface Props { product: ProductItem }
+
 const BADGE_CLASSES: Record<string, string> = {
   "NEW SEASON": styles.badgeNew,
   "ONLY 2 LEFT": styles.badgeLow,
@@ -12,7 +21,6 @@ const BADGE_CLASSES: Record<string, string> = {
   "IN STOCK":   styles.badgeInStock,
 };
 
-// Silhouette color per brand — adds visual variety between cards
 const BRAND_COLORS: Record<string, string> = {
   "OLIVER PEOPLES": "#C9A96E",
   "CARTIER":        "#D4A853",
@@ -27,22 +35,18 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <article className={styles.card} aria-label={`${product.brand} ${product.name}`}>
-      {/* Image area */}
       <div className={styles.imageWrap}>
-        {/* Elegant SVG silhouette — replaces grey box + emoji */}
         <div className={styles.silhouette}>
           <EyewearSilhouette color={silhouetteColor} size={64} />
         </div>
 
-        {/* Badge overlay */}
         {product.badge && (
-          <span className={`${styles.badge} ${BADGE_CLASSES[product.badge]}`}>
+          <span className={`${styles.badge} ${BADGE_CLASSES[product.badge] || styles.badgeNew}`}>
             {product.badge}
           </span>
         )}
       </div>
 
-      {/* Card body */}
       <div className={styles.body}>
         <div className={styles.meta}>
           <span className={styles.brand}>{product.brand}</span>

@@ -1,11 +1,7 @@
-// StatCard — displays a single KPI metric
-// "Dumb" component: only renders what it receives. No data fetching here.
-
 import { DollarSign, ShoppingBag, Gem, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { StatCardData } from "@/lib/mockData";
+import type { StatCardItem } from "@/app/insights/page";
 import styles from "./StatCard.module.css";
 
-// Map icon string names → actual Lucide components
 const ICON_MAP = {
   dollar:   DollarSign,
   bag:      ShoppingBag,
@@ -14,15 +10,13 @@ const ICON_MAP = {
 } as const;
 
 interface StatCardProps {
-  data: StatCardData;
-  // Optional animation delay — lets cards stagger in one by one
+  data: StatCardItem;
   animationDelay?: number;
 }
 
 export default function StatCard({ data, animationDelay = 0 }: StatCardProps) {
   const Icon = ICON_MAP[data.icon as keyof typeof ICON_MAP] ?? DollarSign;
 
-  // Trend icon next to the change badge
   const TrendIcon =
     data.trend === "up"   ? TrendingUp   :
     data.trend === "down" ? TrendingDown :
@@ -40,12 +34,10 @@ export default function StatCard({ data, animationDelay = 0 }: StatCardProps) {
       aria-label={`${data.label}: ${data.value}`}
     >
       <div className={styles.cardHeader}>
-        {/* Gold gradient icon container — no emojis */}
         <div className={styles.iconWrap} aria-hidden="true">
           <Icon size={18} strokeWidth={1.8} className={styles.icon} />
         </div>
 
-        {/* Trend badge */}
         <span className={`${styles.badge} ${badgeClass}`}>
           <TrendIcon size={10} strokeWidth={2.5} />
           {data.changeLabel}

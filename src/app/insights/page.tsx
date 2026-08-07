@@ -9,8 +9,17 @@ import RecentSales from "@/components/insights/RecentSales";
 import AtelierAlerts from "@/components/insights/AtelierAlerts";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./InsightsPage.module.css";
-import { mockRevenueData, mockCollectionMix, StatCardData } from "@/lib/mockData";
 import { RefreshCw } from "lucide-react";
+
+export interface StatCardItem {
+  id: string;
+  label: string;
+  value: string;
+  change: number;
+  changeLabel: string;
+  trend: "up" | "down" | "stable";
+  icon: "dollar" | "bag" | "sparkles" | "users";
+}
 
 const TIME_FILTERS = ["Monthly", "Weekly", "Daily"] as const;
 
@@ -18,11 +27,11 @@ export default function InsightsPage() {
   const [activeFilter, setActiveFilter] = useState<"Monthly" | "Weekly" | "Daily">("Weekly");
   const [loading, setLoading] = useState(true);
 
-  const [stats, setStats] = useState<StatCardData[]>([
-    { id: "gross-revenue", label: "Gross Revenue", value: "$142,850", change: 12.4, changeLabel: "+12.4%", trend: "up", icon: "dollar" },
-    { id: "total-sales", label: "Total Sales", value: "312", change: 5.2, changeLabel: "+5.2%", trend: "up", icon: "bag" },
-    { id: "avg-boutique-value", label: "Avg. Boutique Value", value: "$458", change: 0, changeLabel: "Stable", trend: "stable", icon: "sparkles" },
-    { id: "new-clients", label: "New Clients", value: "42", change: 18, changeLabel: "+18%", trend: "up", icon: "users" },
+  const [stats, setStats] = useState<StatCardItem[]>([
+    { id: "gross-revenue", label: "Gross Revenue", value: "$0", change: 0, changeLabel: "Live", trend: "stable", icon: "dollar" },
+    { id: "total-sales", label: "Total Sales", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "bag" },
+    { id: "avg-boutique-value", label: "Avg. Boutique Value", value: "$0", change: 0, changeLabel: "Live", trend: "stable", icon: "sparkles" },
+    { id: "new-clients", label: "New Clients", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "users" },
   ]);
 
   const [recentSales, setRecentSales] = useState<any[]>([]);
@@ -38,18 +47,18 @@ export default function InsightsPage() {
             id: "gross-revenue",
             label: "Gross Revenue",
             value: `$${res.data.grossRevenue.toLocaleString()}`,
-            change: 12.4,
-            changeLabel: "+12.4%",
-            trend: "up",
+            change: 0,
+            changeLabel: "Live",
+            trend: res.data.grossRevenue > 0 ? "up" : "stable",
             icon: "dollar",
           },
           {
             id: "total-sales",
             label: "Total Sales",
             value: res.data.totalSalesCount.toString(),
-            change: 5.2,
-            changeLabel: "+5.2%",
-            trend: "up",
+            change: 0,
+            changeLabel: "Live",
+            trend: res.data.totalSalesCount > 0 ? "up" : "stable",
             icon: "bag",
           },
           {
@@ -57,28 +66,23 @@ export default function InsightsPage() {
             label: "Avg. Boutique Value",
             value: `$${res.data.avgBoutiqueValue.toLocaleString()}`,
             change: 0,
-            changeLabel: "Stable",
+            changeLabel: "Live",
             trend: "stable",
             icon: "sparkles",
           },
           {
             id: "new-clients",
             label: "New Clients",
-            value: "42",
-            change: 18,
-            changeLabel: "+18%",
-            trend: "up",
+            value: res.data.recentSales.length.toString(),
+            change: 0,
+            changeLabel: "Live",
+            trend: "stable",
             icon: "users",
           },
         ]);
 
-        if (res.data.recentSales.length > 0) {
-          setRecentSales(res.data.recentSales);
-        }
-
-        if (res.data.alerts.length > 0) {
-          setAlerts(res.data.alerts);
-        }
+        setRecentSales(res.data.recentSales || []);
+        setAlerts(res.data.alerts || []);
       }
       setLoading(false);
     }
@@ -115,24 +119,33 @@ export default function InsightsPage() {
 
       {/* Page Body */}
       <div className={shellStyles.pageBody}>
-        {/* Stats Grid */}
-        <div className={styles.statsGrid}>
-          {stats.map((stat, index) => (
-            <StatCard key={stat.id} data={stat} animationDelay={index * 80} />
-          ))}
-        </div>
+        {loading ? (
+          <div className={styles.loadingState}>
+            <RefreshCw size={24} className={styles.spin} />
+            <span>Calculating live metrics from Supabase…</span>
+          </div>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className={styles.statsGrid}>
+              {stats.map((stat, index) => (
+                <StatCard key={stat.id} data={stat} animationDelay={index * 80} />
+              ))}
+            </div>
 
-        {/* Charts Row */}
-        <div className={styles.chartsRow}>
-          <RevenueChart data={mockRevenueData} />
-          <CollectionMixChart data={mockCollectionMix} />
-        </div>
+            {/* Charts Row */}
+            <div className={styles.chartsRow}>
+              <RevenueChart data={[]} />
+              <CollectionMixChart data={[]} />
+            </div>
 
-        {/* Bottom Row */}
-        <div className={styles.bottomRow}>
-          <RecentSales sales={recentSales} />
-          <AtelierAlerts alerts={alerts} />
-        </div>
+            {/* Bottom Row */}
+            <div className={styles.bottomRow}>
+              <RecentSales sales={recentSales} />
+              <AtelierAlerts alerts={alerts} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

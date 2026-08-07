@@ -1,29 +1,59 @@
 import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
+    // 1. Google OAuth Provider
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID || "demo-google-client-id",
+      clientSecret: process.env.AUTH_GOOGLE_SECRET || "demo-google-client-secret",
+    }),
+
+    // 2. Credentials Provider (Email & Hashed Password / Verification Check)
     CredentialsProvider({
-      name: "Credentials",
+      name: "Email & Password",
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "manager@eye.com" },
+        email: { label: "Email", type: "email", placeholder: "user@example.com" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // In Phase 2: verify against database using bcrypt + Prisma
-        // Demo fallback credentials:
-        if (
-          credentials?.email === "admin@eye.com" &&
-          credentials?.password === "admin123"
-        ) {
-          return {
-            id: "user-1",
-            name: "Julianne Moore",
-            email: "admin@eye.com",
-            role: "MANAGER",
-          };
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        return null;
+
+        const email = (credentials.email as string).toLowerCase().trim();
+        const password = credentials.password as string;
+
+        try {
+          // Query live Supabase database for user record
+          const dbUser = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (!dbUser || !dbUser.password) {
+            return null;
+          }
+
+          // Compare hashed password using bcrypt
+          const isValidPassword = await bcrypt.compare(password, dbUser.password);
+          if (!isValidPassword) {
+            return null;
+          }
+
+          return {
+            id: dbUser.id,
+            name: dbUser.name || "Atelier Member",
+            email: dbUser.email,
+            image: dbUser.image || undefined,
+            role: dbUser.role || "MANAGER",
+          };
+        } catch (err) {
+          console.error("Database authentication query error:", err);
+          return null;
+        }
       },
     }),
   ],

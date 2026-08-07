@@ -1,104 +1,63 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { Eye, Mail, Lock } from "lucide-react";
+import AuthForm from "@/components/auth/AuthForm";
+import { Eye, ShieldCheck, Sparkles } from "lucide-react";
 import styles from "./LoginPage.module.css";
 
+export const metadata = {
+  title: "Atelier Portal — EYE Luxury Management",
+  description: "Executive access portal for EYE Luxury Eyewear Atelier",
+};
+
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("admin@eye.com");
-  const [password, setPassword] = useState("admin123");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (res?.error) {
-        // Fallback for demo mode if database connection delays
-        router.push("/insights");
-      } else {
-        router.push("/insights");
-        router.refresh();
-      }
-    } catch (err: any) {
-      // Direct navigation on demo click
-      router.push("/insights");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className={styles.page}>
-      <div className={styles.bgGlow} aria-hidden="true" />
+      {/* ─── Left Editorial Showcase Panel ─────────────────────────────────── */}
+      <section className={styles.leftShowcase}>
+        <div className={styles.leftBgGlow} aria-hidden="true" />
 
-      <div className={styles.card}>
-        <div className={styles.logoHeader}>
-          <div className={styles.logoIcon}>
-            <Eye size={24} color="#0D1117" strokeWidth={2.5} />
+        {/* Brand Header */}
+        <div className={styles.brandHeader}>
+          <div className={styles.brandLogoWrap}>
+            <Eye size={22} color="#0A0D12" strokeWidth={2.5} />
           </div>
-          <h1 className={styles.title}>EYE Dashboard</h1>
-          <p className={styles.subtitle}>Enter your credentials to access the atelier</p>
+          <div>
+            <h1 className={styles.brandTitle}>EYE</h1>
+            <p className={styles.brandSubtitle}>Lumina Atelier</p>
+          </div>
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="login-email">Email Address</label>
-            <div className={styles.inputWrap}>
-              <Mail size={16} className={styles.inputIcon} />
-              <input
-                id="login-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@eye.com"
-                className={styles.input}
-              />
-            </div>
+        {/* Editorial Body Statement */}
+        <div className={styles.editorialBody}>
+          <div className={styles.editorialTag}>
+            <span className={styles.editorialTagLine} />
+            Boutique Operations & Vision Blueprints
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="login-password">Password</label>
-            <div className={styles.inputWrap}>
-              <Lock size={16} className={styles.inputIcon} />
-              <input
-                id="login-password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className={styles.input}
-              />
-            </div>
-          </div>
+          <h2 className={styles.statement}>
+            Precision Vision.
+            <br />
+            <span className={styles.statementGold}>Unrivaled Luxury.</span>
+          </h2>
 
-          <button type="submit" disabled={loading} className={styles.submitBtn}>
-            {loading ? "Signing in…" : "Sign In to Dashboard"}
-          </button>
-        </form>
-
-        <div className={styles.demoHint}>
-          <span className={styles.demoHighlight}>Demo Mode Active:</span>
-          <br />
-          Click Sign In to access all management pages.
+          <p className={styles.editorialDesc}>
+            Elevate bespoke optical client management, active prescriptions, and luxury collection curation with real-time analytics.
+          </p>
         </div>
-      </div>
+
+        {/* Status Node Footer */}
+        <footer className={styles.leftFooter}>
+          <div className={styles.nodeStatus}>
+            <span className={styles.nodeDot} />
+            <span>Supabase PostgreSQL Node Active</span>
+          </div>
+          <span>© 2026 EYE Inc.</span>
+        </footer>
+      </section>
+
+      {/* ─── Right Glassmorphic Form Panel ─────────────────────────────────── */}
+      <section className={styles.rightPanel}>
+        <div className={styles.rightBgGlow} aria-hidden="true" />
+        <AuthForm />
+      </section>
     </div>
   );
 }
