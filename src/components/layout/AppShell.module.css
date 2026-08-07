@@ -1,0 +1,58 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Root Layout Styles
+   
+   This layout creates the two-column structure:
+   [Sidebar (fixed left)] [Main Content (scrollable right)]
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.appShell {
+  display: flex;          /* Flexbox: sidebar and main sit side by side */
+  min-height: 100vh;      /* At least full viewport height */
+}
+
+.mainContent {
+  flex: 1;                /* Takes up all remaining space after sidebar */
+  margin-left: var(--sidebar-width); /* Offset by sidebar width so content doesn't hide behind it */
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  overflow-x: hidden;    /* Prevents horizontal scroll */
+}
+
+/* ─── Page Header (used by all pages) ──────────────────────────────────── */
+.pageHeader {
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  border-bottom: 1px solid var(--color-border-light);
+  background-color: var(--color-surface);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.pageHeaderLeft {
+  flex: 1;
+}
+
+.pageTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.pageSubtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-normal);
+}
+
+.pageHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ─── Page Body ─────────────────────────────────────────────────────────── */
+.pageBody {
+  padding: var(--space-6) var(--space-8);
+}

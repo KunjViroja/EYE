@@ -1,0 +1,64 @@
+.page {}
+
+/* ─── Time Filter Tabs ──────────────────────────────────────────────────── */
+.timeTabs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.timeTab {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.timeTab:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.timeTabActive {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+  color: #ffffff;
+}
+
+/* ─── Stats Grid ────────────────────────────────────────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* ─── Charts Row ────────────────────────────────────────────────────────── */
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* ─── Bottom Row ────────────────────────────────────────────────────────── */
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--space-4);
+}
+
+/* Responsive — collapse to single column on smaller screens */
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chartsRow,
+  .bottomRow {
+    grid-template-columns: 1fr;
+  }
+}
