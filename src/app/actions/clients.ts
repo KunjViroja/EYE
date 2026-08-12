@@ -19,14 +19,18 @@ export interface CreateClientInput {
 
 export interface UpdatePrescriptionInput {
   clientId: string;
+  doctorName?: string;
+  visitDate?: string;
   rightSph: number;
   rightCyl: number;
   rightAxis: number;
   rightAdd: number;
+  rightVision?: string;
   leftSph: number;
   leftCyl: number;
   leftAxis: number;
   leftAdd: number;
+  leftVision?: string;
   pdBinocular?: number;
   pdRight?: number;
   pdLeft?: number;
@@ -37,6 +41,7 @@ export interface UpdatePrescriptionInput {
   leftPrism?: number;
   leftBase?: string;
   lensType?: string;
+  lensFor?: string;
   lensIndex?: string;
   lensCoating?: string;
   opticianNotes?: string;

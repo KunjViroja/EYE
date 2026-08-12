@@ -21,6 +21,15 @@ export interface CreateProductInput {
   bridgeWidth?: number;
   templeLength?: number;
   gender?: string;
+  // Purchase & GST fields
+  purchaseDetails?: {
+    supplierName: string;
+    invoiceNumber?: string;
+    quantity: number;
+    unitCost: number;
+    gstIncluded?: boolean;
+    gstRate?: number;
+  };
 }
 
 // ─── Fetch All Products ───────────────────────────────────────────────────────
@@ -70,16 +79,19 @@ export async function createProduct(input: CreateProductInput) {
       return { success: false, error: `Product with SKU "${input.sku}" already exists.` };
     }
 
+    const initialStock = input.purchaseDetails?.quantity ?? (input.stock ? Number(input.stock) : 10);
+    const finalCostPrice = input.purchaseDetails?.unitCost ?? (input.costPrice ? Number(input.costPrice) : undefined);
+
     const product = await prisma.product.create({
       data: {
         brand: input.brand.toUpperCase(),
         name: input.name,
         sku: input.sku.toUpperCase(),
         price: Number(input.price),
-        costPrice: input.costPrice ? Number(input.costPrice) : undefined,
+        costPrice: finalCostPrice,
         category: input.category || ProductCategory.FRAMES,
         badge: input.badge || null,
-        stock: input.stock ? Number(input.stock) : 10,
+        stock: initialStock,
         frameMaterial: input.frameMaterial || undefined,
         frameShape: input.frameShape || undefined,
         frameType: input.frameType || undefined,
@@ -90,6 +102,24 @@ export async function createProduct(input: CreateProductInput) {
         gender: input.gender || "Unisex",
       },
     });
+
+    // If purchase details provided, log purchase
+    if (input.purchaseDetails && input.purchaseDetails.supplierName) {
+      try {
+        const { recordStockPurchase } = await import("@/app/actions/purchases");
+        await recordStockPurchase({
+          productId: product.id,
+          supplierName: input.purchaseDetails.supplierName,
+          invoiceNumber: input.purchaseDetails.invoiceNumber || "",
+          quantity: input.purchaseDetails.quantity,
+          unitCost: input.purchaseDetails.unitCost,
+          gstIncluded: input.purchaseDetails.gstIncluded,
+          gstRate: input.purchaseDetails.gstRate,
+        });
+      } catch (purchErr) {
+        console.warn("Could not log opening purchase details:", purchErr);
+      }
+    }
 
     revalidatePath("/collections");
     revalidatePath("/pos");

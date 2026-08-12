@@ -2,21 +2,39 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getProducts } from "@/app/actions/products";
+import { getPurchaseLogs, PurchaseLogItem } from "@/app/actions/purchases";
 import ProductCard, { ProductItem } from "@/components/collections/ProductCard";
-import NewProductModal from "@/components/collections/NewProductModal";
+import AddProductAndPurchaseModal from "@/components/collections/AddProductAndPurchaseModal";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./CollectionsPage.module.css";
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Search, Plus, RefreshCw, ShoppingBag, Glasses, Disc, Package } from "lucide-react";
+import { saasConfig } from "@/config/saasConfig";
 
-export default function CollectionsPage() {
+type CategoryTab = "All" | "Frames" | "Lenses" | "Accessories";
+
+export default function InventoryPage() {
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [purchaseLogs, setPurchaseLogs] = useState<PurchaseLogItem[]>([]);
+  const [activeTab, setActiveTab] = useState<CategoryTab>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchLiveProducts = useCallback(async () => {
+  // Merged Modal state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const fetchInventoryData = useCallback(async () => {
     setLoading(true);
-    const res = await getProducts("All", searchQuery);
+
+    const mappedCategory =
+      activeTab === "Frames"
+        ? "FRAMES"
+        : activeTab === "Lenses"
+        ? "BESPOKE_LENSES"
+        : activeTab === "Accessories"
+        ? "ACCESSORIES"
+        : "All";
+
+    const res = await getProducts(mappedCategory, searchQuery);
     if (res.success && res.data) {
       const mapped: ProductItem[] = res.data.map((p) => ({
         id: p.id,
@@ -26,39 +44,44 @@ export default function CollectionsPage() {
         price: p.price,
         imageUrl: p.imageUrl || "/products/default.jpg",
         badge: p.badge ? p.badge.replace("_", " ") : undefined,
-        category: "Frames",
+        category: p.category === "BESPOKE_LENSES" ? "Bespoke Lenses" : p.category === "ACCESSORIES" ? "Accessories" : "Frames",
       }));
       setProducts(mapped);
     }
+
+    const purchasesRes = await getPurchaseLogs();
+    if (purchasesRes.success && purchasesRes.data) {
+      setPurchaseLogs(purchasesRes.data);
+    }
+
     setLoading(false);
-  }, [searchQuery]);
+  }, [activeTab, searchQuery]);
 
   useEffect(() => {
-    fetchLiveProducts();
-  }, [fetchLiveProducts]);
+    fetchInventoryData();
+  }, [fetchInventoryData]);
 
   const totalValue = products.reduce((sum, p) => sum + p.price, 0);
-  const lowStockCount = products.filter((p) => p.badge === "ONLY 2 LEFT").length;
 
   return (
     <div>
       {/* Page Header */}
       <div className={shellStyles.pageHeader}>
         <div className={shellStyles.pageHeaderLeft}>
-          <h1 className={shellStyles.pageTitle}>Curated Collections</h1>
+          <h1 className={shellStyles.pageTitle}>Inventory Management</h1>
           <p className={shellStyles.pageSubtitle}>
-            Manage luxury inventory and curated designer catalog.
+            Manage frames, bespoke lenses, accessories, and log vendor purchases for {saasConfig.storeName}.
           </p>
         </div>
-        <div className={shellStyles.pageHeaderRight}>
+        <div className={shellStyles.pageHeaderRight} style={{ display: "flex", gap: "10px" }}>
           <button
             type="button"
             className={styles.newButton}
-            onClick={() => setIsModalOpen(true)}
-            id="collections-new-creation"
+            onClick={() => setIsAddModalOpen(true)}
+            style={{ background: "linear-gradient(135deg, #d4af37 0%, #b8860b 100%)", color: "#0b0f19", fontWeight: 700 }}
           >
             <Plus size={16} />
-            New Product
+            Add Product & Purchase
           </button>
         </div>
       </div>
@@ -68,26 +91,57 @@ export default function CollectionsPage() {
         <div className={styles.statsRow}>
           <div className={styles.stat}>
             <span className={styles.statValue}>{products.length.toLocaleString()}</span>
-            <span className={styles.statLabel}>
-              Total Items <span className={styles.statUnit}>Units</span>
-            </span>
+            <span className={styles.statLabel}>Total Inventory Items</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>
             <span className={styles.statValue}>
-              ${totalValue > 0 ? (totalValue > 1000 ? `${(totalValue / 1000).toFixed(1)}k` : totalValue) : "0"}
+              {saasConfig.currency}{totalValue > 0 ? (totalValue > 1000 ? `${(totalValue / 1000).toFixed(1)}k` : totalValue) : "0"}
             </span>
-            <span className={styles.statLabel}>Portfolio Value</span>
+            <span className={styles.statLabel}>Inventory Valuation</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>
-            <span className={`${styles.statValue} ${styles.statDanger}`}>
-              {lowStockCount}
-            </span>
-            <span className={styles.statLabel}>
-              Awaiting Curation <span className={styles.statLow}>Low stock</span>
-            </span>
+            <span className={styles.statValue}>{purchaseLogs.length}</span>
+            <span className={styles.statLabel}>Purchase Orders Logged</span>
           </div>
+        </div>
+
+        {/* Category Tabs Switcher */}
+        <div style={{ display: "flex", gap: "10px", margin: "1.25rem 0", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
+          {[
+            { id: "All", label: "All Items", icon: Package },
+            { id: "Frames", label: "Eyewear Frames", icon: Glasses },
+            { id: "Lenses", label: "Bespoke Lenses", icon: Disc },
+            { id: "Accessories", label: "Accessories & Kits", icon: ShoppingBag },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as CategoryTab)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: isActive ? "1px solid rgba(212, 175, 55, 0.5)" : "1px solid transparent",
+                  background: isActive ? "rgba(212, 175, 55, 0.12)" : "rgba(255, 255, 255, 0.03)",
+                  color: isActive ? "#d4af37" : "#94a3b8",
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <Icon size={15} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Search + Filter */}
@@ -96,15 +150,13 @@ export default function CollectionsPage() {
             <Search size={16} className={styles.searchIcon} />
             <input
               type="search"
-              placeholder="Search by brand, color, or model..."
+              placeholder="Search by brand, SKU, frame model, or lens coating..."
               className={styles.searchInput}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              id="collections-search"
-              aria-label="Search collections"
             />
           </div>
-          <button type="button" className={styles.filterButton} onClick={fetchLiveProducts}>
+          <button type="button" className={styles.filterButton} onClick={fetchInventoryData}>
             <RefreshCw size={15} className={loading ? styles.spin : ""} />
             Refresh
           </button>
@@ -118,9 +170,9 @@ export default function CollectionsPage() {
           </div>
         ) : products.length === 0 ? (
           <div className={styles.emptyState}>
-            <p>No creations match your search.</p>
-            <button type="button" className={styles.newButton} onClick={() => setIsModalOpen(true)}>
-              + Add First Creation
+            <p>No inventory items match your tab or search filter.</p>
+            <button type="button" className={styles.newButton} onClick={() => setIsAddModalOpen(true)}>
+              + Add First Item
             </button>
           </div>
         ) : (
@@ -132,11 +184,12 @@ export default function CollectionsPage() {
         )}
       </div>
 
-      {/* New Creation Modal */}
-      <NewProductModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchLiveProducts}
+      {/* Merged Product Creation & Purchase Order Modal */}
+      <AddProductAndPurchaseModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        products={products}
+        onSuccess={fetchInventoryData}
       />
     </div>
   );
