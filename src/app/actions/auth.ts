@@ -31,10 +31,12 @@ export async function registerUserWithVerification(input: RegisterUserInput) {
     // 2. Hash password if provided
     let hashedPassword: string | undefined = undefined;
     if (input.password) {
-      if (input.password.length < 6) {
-        return { success: false, error: "Password must be at least 6 characters long." };
+      // SECURITY: Enforce strong password requirements
+      const passwordValidation = validatePassword(input.password);
+      if (!passwordValidation.isValid) {
+        return { success: false, error: passwordValidation.error };
       }
-      hashedPassword = await bcrypt.hash(input.password, 10);
+      hashedPassword = await bcrypt.hash(input.password, 12); // Increased salt rounds for better security
     }
 
     // 3. Create or update user record
@@ -108,4 +110,60 @@ export async function verifyEmailToken(email: string, token: string) {
     console.error("Error verifying email token:", error);
     return { success: false, error: error.message || "Email verification failed." };
   }
+}
+
+/**
+ * Validates password against security requirements
+ * SECURITY: Enforces industry-standard password complexity
+ */
+function validatePassword(password: string): { isValid: boolean; error?: string } {
+  // Minimum 12 characters (OWASP recommendation for user-created passwords)
+  if (password.length < 12) {
+    return {
+      isValid: false,
+      error: "Password must be at least 12 characters long.",
+    };
+  }
+
+  // Maximum 128 characters (prevent potential DoS)
+  if (password.length > 128) {
+    return {
+      isValid: false,
+      error: "Password must not exceed 128 characters.",
+    };
+  }
+
+  // Must contain at least one uppercase letter
+  if (!/[A-Z]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one uppercase letter.",
+    };
+  }
+
+  // Must contain at least one lowercase letter
+  if (!/[a-z]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one lowercase letter.",
+    };
+  }
+
+  // Must contain at least one number
+  if (!/[0-9]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one number.",
+    };
+  }
+
+  // Must contain at least one special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one special character (!@#$%^&* etc.)",
+    };
+  }
+
+  return { isValid: true };
 }

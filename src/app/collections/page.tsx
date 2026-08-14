@@ -36,7 +36,7 @@ export default function InventoryPage() {
 
     const res = await getProducts(mappedCategory, searchQuery);
     if (res.success && res.data) {
-      const mapped: ProductItem[] = res.data.map((p) => ({
+      const mapped: ProductItem[] = res.data.map((p: typeof res.data[0]) => ({
         id: p.id,
         brand: p.brand,
         name: p.name,

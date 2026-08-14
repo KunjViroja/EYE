@@ -61,7 +61,7 @@ export async function processSaleTransaction(input: ProcessSaleInput) {
 
     try {
       // Execute in a database transaction
-      saleResult = await prisma.$transaction(async (tx) => {
+      saleResult = await prisma.$transaction(async (tx: any) => {
         // 1. Create Sale record
         const createdSale = await tx.sale.create({
           data: {

@@ -8,8 +8,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     // 1. Google OAuth Provider
     GoogleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID || "demo-google-client-id",
-      clientSecret: process.env.AUTH_GOOGLE_SECRET || "demo-google-client-secret",
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      // SECURITY: Throw error if credentials not configured
+      ...((!process.env.AUTH_GOOGLE_ID || !process.env.AUTH_GOOGLE_SECRET) && {
+        onError: (error) => {
+          console.error("Google OAuth not properly configured. Set AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET env vars.");
+          throw new Error("Google OAuth provider misconfigured");
+        },
+      }),
     }),
 
     // 2. Credentials Provider (Email & Hashed Password / Verification Check)

@@ -37,15 +37,28 @@ const nextConfig: NextConfig = {
           {
             // Content Security Policy — tells the browser which sources are trusted
             // This prevents XSS (Cross-Site Scripting) attacks
+            // IMPORTANT: 'unsafe-inline' and 'unsafe-eval' should only be used in development
             key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob:",
-              "connect-src 'self'",
-            ].join("; "),
+            value: process.env.NODE_ENV === "production"
+              ? [
+                  "default-src 'self'",
+                  "script-src 'self'",
+                  "style-src 'self' https://fonts.googleapis.com",
+                  "font-src 'self' https://fonts.gstatic.com",
+                  "img-src 'self' data: blob: https:",
+                  "connect-src 'self'",
+                  "frame-ancestors 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                ].join("; ")
+              : [
+                  "default-src 'self'",
+                  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                  "font-src 'self' https://fonts.gstatic.com",
+                  "img-src 'self' data: blob:",
+                  "connect-src 'self' ws: wss:",
+                ].join("; "),
           },
         ],
       },

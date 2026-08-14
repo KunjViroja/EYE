@@ -25,10 +25,10 @@ export async function getInsightsData() {
       },
     });
 
-    const recentSales = recentSalesFromDb.map((s) => ({
+    const recentSales = recentSalesFromDb.map((s: typeof recentSalesFromDb[0]) => ({
       id: s.id,
       clientName: s.client?.name || "Client",
-      clientInitials: s.client?.name ? s.client.name.split(" ").map((n) => n[0]).join("").toUpperCase() : "CL",
+      clientInitials: s.client?.name ? s.client.name.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "CL",
       product: s.items[0]?.product?.name || "Custom Eyewear",
       amount: s.grandTotal,
       status: s.status === "COMPLETED" ? ("Completed" as const) : ("Processing" as const),
@@ -40,7 +40,7 @@ export async function getInsightsData() {
       orderBy: { createdAt: "desc" },
     });
 
-    const alerts = alertsFromDb.map((a) => ({
+    const alerts = alertsFromDb.map((a: typeof alertsFromDb[0]) => ({
       id: a.id,
       type: a.type.toLowerCase() as "restock" | "vvip" | "info",
       title: a.title,

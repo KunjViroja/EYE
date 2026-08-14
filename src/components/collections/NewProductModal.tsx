@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { createProduct } from "@/app/actions/products";
-import { ProductCategory, ProductBadge } from "@prisma/client";
+import { ProductCategory, ProductBadge } from "@/lib/types";
 import styles from "./NewProductModal.module.css";
 
 interface Props {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/app/actions/clients";
-import { MemberTier } from "@prisma/client";
+import { MemberTier } from "@/lib/types";
 import styles from "./NewClientModal.module.css";
 
 interface Props {

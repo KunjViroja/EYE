@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Glasses, Disc, ShoppingBag, PlusCircle, Percent, ArrowUpRight } from "lucide-react";
 import { createProduct } from "@/app/actions/products";
 import { recordStockPurchase } from "@/app/actions/purchases";
-import { ProductCategory, ProductBadge } from "@prisma/client";
+import { ProductCategory, ProductBadge } from "@/lib/types";
 import { ProductItem } from "./ProductCard";
 import styles from "./AddProductAndPurchaseModal.module.css";
 import { saasConfig } from "@/config/saasConfig";

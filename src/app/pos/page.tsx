@@ -8,7 +8,7 @@ import styles from "./POSPage.module.css";
 import { Search, ShoppingBag, Minus, Plus, Trash2, Sparkles, Building2, Tag, CheckCircle2, AlertCircle, Clock, Check, DollarSign, Receipt, Banknote, UserPlus, FileText, Eye, EyeOff, Calendar, UserCheck } from "lucide-react";
 import BillingNewClientModal from "@/components/pos/BillingNewClientModal";
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
-import { PaymentMethod } from "@prisma/client";
+import { PaymentMethod } from "@/lib/types";
 import { saasConfig } from "@/config/saasConfig";
 
 interface POSProduct {
@@ -149,7 +149,7 @@ export default function POSPage() {
 
     if (prodRes.success && prodRes.data) {
       setProducts(
-        prodRes.data.map((p) => ({
+        prodRes.data.map((p: typeof prodRes.data[0]) => ({
           id: p.id,
           brand: p.brand,
           name: p.name,
@@ -162,7 +162,7 @@ export default function POSPage() {
     }
 
     if (clientRes.success && clientRes.data && clientRes.data.length > 0) {
-      const clientList = clientRes.data.map((c) => {
+      const clientList = clientRes.data.map((c: typeof clientRes.data[0]) => {
         const latestRx = c.prescriptions?.[0];
         return {
           id: c.id,
