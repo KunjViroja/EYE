@@ -127,10 +127,10 @@ export function validateNumber(
 export function validateCurrencyAmount(
   amount: unknown,
   maxAmount: number = 1000000
-): { valid: boolean; amount: number; error?: string } {
+): { valid: boolean; amount?: number; value?: number; error?: string } {
   const validation = validateNumber(amount, { min: 0, max: maxAmount });
 
-  if (!validation.valid) return validation;
+  if (!validation.valid) return { valid: false, error: validation.error };
 
   // Ensure only 2 decimal places
   const rounded = Math.round(validation.value * 100) / 100;
