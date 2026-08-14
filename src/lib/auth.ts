@@ -58,6 +58,8 @@ if (googleConfigured) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  trustHost: Boolean(process.env.AUTH_TRUST_HOST || process.env.NODE_ENV !== "production"),
   providers,
 
   pages: {
@@ -66,6 +68,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60,   // 24 hours
   },
 
   callbacks: {

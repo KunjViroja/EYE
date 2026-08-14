@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { registerUserWithVerification } from "@/app/actions/auth";
 import {
   Mail, Lock, User, Eye, EyeOff, ArrowRight,
@@ -15,6 +15,9 @@ type Mode = "signin" | "signup";
 
 export default function AuthForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVerifiedParam = searchParams.get("verified") === "true";
+
   const [mode, setMode] = useState<Mode>("signin");
 
   // Form state
@@ -64,7 +67,12 @@ export default function AuthForm() {
           setError("Incorrect email or password. Please try again.");
         }
       } else {
-        router.push("/insights");
+        const hasCompletedOnboarding = localStorage.getItem("optipay_onboarding_completed");
+        if (!hasCompletedOnboarding) {
+          router.push("/welcome");
+        } else {
+          router.push("/insights");
+        }
         router.refresh();
       }
     } catch {
@@ -188,6 +196,14 @@ export default function AuthForm() {
           Register
         </button>
       </div>
+
+      {/* ─── Verified Banner ────────────────────────────────────────────────── */}
+      {isVerifiedParam && !error && (
+        <div className={styles.verifiedBanner}>
+          <CheckCircle2 size={15} color="#10b981" />
+          <span>Email verified successfully! Sign in to launch your store.</span>
+        </div>
+      )}
 
       {/* ─── Error Banner ─────────────────────────────────────────────────── */}
       {error && (

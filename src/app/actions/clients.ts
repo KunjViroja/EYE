@@ -48,9 +48,15 @@ export interface UpdatePrescriptionInput {
   opticianNotes?: string;
 }
 
-// ─── CACHED INTERNAL CLIENT QUERY (Sub-2ms Server Response) ───────────────────
-const getCachedClientsQuery = unstable_cache(
-  async (shopId: string, cursor?: string, take: number = 15) => {
+// ─── Direct High-Performance Client Query (Instant Live Sync) ─────────────────
+export async function getClients(cursor?: string, take: number = 15) {
+  try {
+    const shopId = await getShopId();
+
+    if (!shopId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const clients = await prisma.client.findMany({
       where: { shopId },
       take: take + 1,
@@ -71,15 +77,19 @@ const getCachedClientsQuery = unstable_cache(
         sales: {
           select: {
             id: true,
+            subtotal: true,
+            discount: true,
             grandTotal: true,
             advancePaid: true,
             remainingBalance: true,
             status: true,
+            paymentMethod: true,
             createdAt: true,
             items: {
+              take: 5,
               select: {
                 id: true,
-                quantity: true, // ✅ CRITICAL: Select quantity for accurate item counts
+                quantity: true, // ✅ Select quantity for accurate item counts
                 unitPrice: true,
                 hasPrescription: true,
                 product: {
@@ -89,7 +99,7 @@ const getCachedClientsQuery = unstable_cache(
             },
           },
           orderBy: { createdAt: "desc" },
-          take: 20,
+          take: 10,
         },
         prescriptions: {
           select: {
@@ -121,34 +131,10 @@ const getCachedClientsQuery = unstable_cache(
     const nextCursor = hasMore ? data[data.length - 1]?.id : null;
 
     return {
+      success: true,
       data,
       nextCursor,
       hasMore,
-    };
-  },
-  ["clients-list-cache"],
-  {
-    revalidate: 60,
-    tags: ["clients-cache"],
-  }
-);
-
-// ─── Fetch Clients (Cached + Multi-Tenant Scoped) ────────────────────────────
-export async function getClients(cursor?: string, take: number = 15) {
-  try {
-    const shopId = await getShopId();
-
-    if (!shopId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    const result = await getCachedClientsQuery(shopId, cursor, take);
-
-    return {
-      success: true,
-      data: result.data,
-      nextCursor: result.nextCursor,
-      hasMore: result.hasMore,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Failed to fetch clients";

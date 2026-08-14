@@ -181,8 +181,14 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ─── Dashboard Button ───────────────────────────────────────────────────── */
-.dashboardBtn {
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tourBtn {
   width: 100%;
   height: 48px;
   background: linear-gradient(135deg, #d4af37 0%, #e8c84a 100%);
@@ -197,12 +203,35 @@
   justify-content: center;
   gap: 8px;
   transition: all 0.18s ease;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+}
+
+.tourBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.35);
+}
+
+.dashboardBtn {
+  width: 100%;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s ease;
 }
 
 .dashboardBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.32);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 
 /* ─── Footer Note ────────────────────────────────────────────────────────── */

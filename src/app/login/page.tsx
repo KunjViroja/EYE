@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AuthForm from "@/components/auth/AuthForm";
 import type { Metadata } from "next";
 import styles from "./LoginPage.module.css";
@@ -16,7 +17,9 @@ export default function LoginPage() {
 
       {/* Centered form card */}
       <div className={styles.card}>
-        <AuthForm />
+        <Suspense fallback={<div style={{ color: "#d4af37", textAlign: "center", padding: "20px" }}>Loading...</div>}>
+          <AuthForm />
+        </Suspense>
       </div>
 
       {/* Footer */}

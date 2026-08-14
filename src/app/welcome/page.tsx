@@ -39,6 +39,21 @@ export default function WelcomePage() {
     if (stored) setShopName(stored);
   }, []);
 
+  const handleStartTour = () => {
+    localStorage.setItem("optipay_onboarding_completed", "true");
+    router.push("/insights?tour=true");
+  };
+
+  const handleGoToDashboard = () => {
+    localStorage.setItem("optipay_onboarding_completed", "true");
+    router.push("/insights");
+  };
+
+  const handleActionClick = (href: string) => {
+    localStorage.setItem("optipay_onboarding_completed", "true");
+    router.push(href);
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.glowCenter} aria-hidden="true" />
@@ -62,7 +77,7 @@ export default function WelcomePage() {
             Welcome to OptiPay 🎉
           </h1>
           <p className={styles.heroDesc}>
-            Your optical store is live. Here&apos;s how to get started in just 3 steps.
+            Your optical store is live. Explore the guided walkthrough or jump straight in.
           </p>
         </div>
 
@@ -75,7 +90,7 @@ export default function WelcomePage() {
                 key={action.href}
                 type="button"
                 className={styles.actionCard}
-                onClick={() => router.push(action.href)}
+                onClick={() => handleActionClick(action.href)}
                 style={{ animationDelay: `${idx * 0.08}s` }}
               >
                 <div className={styles.actionLeft}>
@@ -96,18 +111,29 @@ export default function WelcomePage() {
           })}
         </div>
 
-        {/* ─── Skip to Dashboard ─────────────────────────────────────────── */}
-        <button
-          type="button"
-          className={styles.dashboardBtn}
-          onClick={() => router.push("/insights")}
-        >
-          Go to Dashboard
-          <ArrowRight size={15} />
-        </button>
+        {/* ─── Buttons ───────────────────────────────────────────────────── */}
+        <div className={styles.buttonGroup}>
+          <button
+            type="button"
+            className={styles.tourBtn}
+            onClick={handleStartTour}
+          >
+            <Sparkles size={16} />
+            Start Interactive Tour
+            <ArrowRight size={15} />
+          </button>
+
+          <button
+            type="button"
+            className={styles.dashboardBtn}
+            onClick={handleGoToDashboard}
+          >
+            Go to Dashboard
+          </button>
+        </div>
 
         <p className={styles.footerNote}>
-          You can always find these in the sidebar navigation.
+          You can always explore all features from the sidebar navigation.
         </p>
       </div>
     </main>

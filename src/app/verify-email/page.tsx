@@ -31,9 +31,9 @@ function VerifyEmailContent() {
       setSuccess(res.success);
       setMessage(res.error || res.message || "Email verified!");
 
-      // On success, redirect to /welcome after a short delay
+      // On success, redirect to /login?verified=true after a short delay
       if (res.success) {
-        setTimeout(() => router.push("/welcome"), 2000);
+        setTimeout(() => router.push("/login?verified=true"), 1800);
       }
     }
 
@@ -51,7 +51,7 @@ function VerifyEmailContent() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "16px 0" }}>
           <CheckCircle2 size={48} color="#10b981" strokeWidth={1.5} />
           <p style={{ color: "white", fontSize: "15px", fontWeight: 600 }}>Email Verified!</p>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", textAlign: "center" }}>Redirecting you to your shop dashboard…</p>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", textAlign: "center" }}>Redirecting you to sign in to your store…</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "16px 0" }}>

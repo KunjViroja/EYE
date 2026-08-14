@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { getProducts } from "@/app/actions/products";
-import { getClients } from "@/app/actions/clients";
-import { processSaleTransaction, getActiveOrders, settleOrderRemainingBalance, ActiveOrderRecord } from "@/app/actions/sales";
+import { processSaleTransaction, getPOSInitialData, settleOrderRemainingBalance, ActiveOrderRecord } from "@/app/actions/sales";
 import styles from "./POSPage.module.css";
 import { Search, ShoppingBag, Minus, Plus, Trash2, Sparkles, Building2, Tag, CheckCircle2, AlertCircle, Clock, Check, DollarSign, Receipt, Banknote, UserPlus, FileText, Eye, EyeOff, Calendar, UserCheck } from "lucide-react";
 import BillingNewClientModal from "@/components/pos/BillingNewClientModal";
+import ThermalReceiptModal, { ReceiptData } from "@/components/pos/ThermalReceiptModal";
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 import { PaymentMethod } from "@/lib/types";
 import { saasConfig } from "@/config/saasConfig";
@@ -126,87 +125,77 @@ export default function POSPage() {
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Receipt Modal State
-  const [receiptData, setReceiptData] = useState<{
-    id: string;
-    clientName: string;
-    grandTotal: number;
-    advancePaid: number;
-    remainingBalance: number;
-    isAdvance: boolean;
-    billType: string;
-  } | null>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
-  // Fetch live products, clients & active orders
+  // Fetch live products, clients & active orders in a single ultra-fast roundtrip
   const loadData = useCallback(async (mounted?: { current: boolean }) => {
     setLoading(true);
 
-    const [prodRes, clientRes, orderRes] = await Promise.all([
-      getProducts(selectedCategory, searchQuery),
-      getClients(),
-      getActiveOrders(),
-    ]);
+    const res = await getPOSInitialData(selectedCategory, searchQuery);
 
     if (mounted && !mounted.current) return;
 
-    if (prodRes.success && prodRes.data) {
-      setProducts(
-        prodRes.data.map((p: typeof prodRes.data[0]) => ({
-          id: p.id,
-          brand: p.brand,
-          name: p.name,
-          sku: p.sku,
-          price: p.price,
-          stock: p.stock,
-          badge: p.badge ? p.badge.replace("_", " ") : undefined,
-          category: p.category,
-        }))
-      );
-    }
+    if (res.success && res.data) {
+      if (res.data.products) {
+        setProducts(
+          res.data.products.map((p: any) => ({
+            id: p.id,
+            brand: p.brand,
+            name: p.name,
+            sku: p.sku,
+            price: p.price,
+            stock: p.stock,
+            badge: p.badge ? p.badge.replace("_", " ") : undefined,
+            category: p.category,
+          }))
+        );
+      }
 
-    if (clientRes.success && clientRes.data && clientRes.data.length > 0) {
-      const clientList = clientRes.data.map((c: typeof clientRes.data[0]) => {
-        const latestRx = c.prescriptions?.[0];
-        return {
-          id: c.id,
-          name: c.name,
-          tier: c.tier.replace(/_/g, " "),
-          discountRate: 0.1, // 10% member discount
-          phone: c.phone || "",
-          email: c.email || "",
-          location: c.location || "Not provided",
-          doctorName: "Dr. A. Sharma (Optometrist)",
-          visitDate: new Date().toLocaleDateString("en-GB"),
-          latestPrescription: latestRx
-            ? {
-              doctorName: "Dr. A. Sharma",
-              visitDate: new Date().toLocaleDateString("en-GB"),
-              rightSph: latestRx.rightSph,
-              rightCyl: latestRx.rightCyl,
-              rightAxis: latestRx.rightAxis,
-              rightAdd: latestRx.rightAdd,
-              rightVision: "6/6",
-              leftSph: latestRx.leftSph,
-              leftCyl: latestRx.leftCyl,
-              leftAxis: latestRx.leftAxis,
-              leftAdd: latestRx.leftAdd,
-              leftVision: "6/6",
-              pdBinocular: latestRx.pdBinocular || 63,
-              lensType: latestRx.lensType || "Progressive",
-              lensFor: "Rx",
-              lensIndex: latestRx.lensIndex || "1.67 High-Index",
-              lensCoating: latestRx.lensCoating || "Anti-Reflective AR",
-              nextVisitDate: new Date(Date.now() + 86400000 * 180).toLocaleDateString("en-GB"),
-              deliveryDate: new Date(Date.now() + 86400000 * 2).toLocaleDateString("en-GB"),
-            }
-            : undefined,
-        };
-      });
-      setClients(clientList);
-      setSelectedClient((prev) => prev ?? clientList[0]);
-    }
+      if (res.data.clients && res.data.clients.length > 0) {
+        const clientList = res.data.clients.map((c: any) => {
+          const latestRx = c.prescriptions?.[0];
+          return {
+            id: c.id,
+            name: c.name,
+            tier: c.tier.replace(/_/g, " "),
+            discountRate: 0.1,
+            phone: c.phone || "",
+            email: c.email || "",
+            location: c.location || "Not provided",
+            doctorName: "Dr. A. Sharma (Optometrist)",
+            visitDate: new Date().toLocaleDateString("en-GB"),
+            latestPrescription: latestRx
+              ? {
+                doctorName: "Dr. A. Sharma",
+                visitDate: new Date().toLocaleDateString("en-GB"),
+                rightSph: latestRx.rightSph,
+                rightCyl: latestRx.rightCyl,
+                rightAxis: latestRx.rightAxis,
+                rightAdd: latestRx.rightAdd,
+                rightVision: "6/6",
+                leftSph: latestRx.leftSph,
+                leftCyl: latestRx.leftCyl,
+                leftAxis: latestRx.leftAxis,
+                leftAdd: latestRx.leftAdd,
+                leftVision: "6/6",
+                pdBinocular: latestRx.pdBinocular || 63,
+                lensType: latestRx.lensType || "Progressive",
+                lensFor: "Rx",
+                lensIndex: latestRx.lensIndex || "1.67 High-Index",
+                lensCoating: latestRx.lensCoating || "Anti-Reflective AR",
+                nextVisitDate: new Date(Date.now() + 86400000 * 180).toLocaleDateString("en-GB"),
+                deliveryDate: new Date(Date.now() + 86400000 * 2).toLocaleDateString("en-GB"),
+              }
+              : undefined,
+          };
+        });
+        setClients(clientList);
+        setSelectedClient((prev) => prev ?? clientList[0]);
+      }
 
-    if (orderRes.success && orderRes.data) {
-      setActiveOrders(orderRes.data);
+      if (res.data.activeOrders) {
+        setActiveOrders(res.data.activeOrders);
+      }
     }
 
     setLoading(false);
@@ -358,14 +347,50 @@ export default function POSPage() {
     setProcessing(false);
 
     if (result.success && result.data) {
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("en-GB");
+      const formattedTime = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
       setReceiptData({
-        id: result.data.id || currentOrderNumber,
+        orderId: result.data.id || currentOrderNumber,
+        date: formattedDate,
+        time: formattedTime,
         clientName: selectedClient.name,
+        clientPhone: selectedClient.phone,
+        clientLocation: selectedClient.location,
+        billType,
+        paymentMethod: paymentMethod === PaymentMethod.CASH ? "Cash" : paymentMethod === PaymentMethod.WIRE_TRANSFER ? "UPI" : "Card",
+        items: cart.map((item) => ({
+          name: item.product.name,
+          brand: item.product.brand,
+          quantity: item.quantity,
+          unitPrice: item.product.price,
+          hasPrescription: item.hasPrescription,
+        })),
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        taxableAmount: totals.taxableAmount,
+        cgst: totals.cgst,
+        sgst: totals.sgst,
+        igst: totals.igst,
+        totalTax: totals.totalTax,
         grandTotal: totals.grandTotal,
         advancePaid: paidNow,
         remainingBalance: result.data.remainingBalance,
         isAdvance: isAdvancePayment,
-        billType,
+        rxData: selectedClient.latestPrescription ? {
+          rightSph: selectedClient.latestPrescription.rightSph,
+          rightCyl: selectedClient.latestPrescription.rightCyl,
+          rightAxis: selectedClient.latestPrescription.rightAxis,
+          rightAdd: selectedClient.latestPrescription.rightAdd,
+          leftSph: selectedClient.latestPrescription.leftSph,
+          leftCyl: selectedClient.latestPrescription.leftCyl,
+          leftAxis: selectedClient.latestPrescription.leftAxis,
+          leftAdd: selectedClient.latestPrescription.leftAdd,
+          pdBinocular: selectedClient.latestPrescription.pdBinocular,
+          doctorName: selectedClient.doctorName,
+          deliveryDate: selectedClient.latestPrescription.deliveryDate,
+        } : undefined,
       });
 
       setStatusMsg({
@@ -389,6 +414,64 @@ export default function POSPage() {
       setStatusMsg({ type: "success", text: res.message || "Order balance settled and delivered!" });
       loadData();
     }
+  };
+
+  const handleOpenActiveOrderReceipt = (ord: ActiveOrderRecord) => {
+    const now = new Date(ord.createdAt);
+    const formattedDate = now.toLocaleDateString("en-GB");
+    const formattedTime = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+    const items = ord.items?.length > 0
+      ? ord.items
+      : [{
+          name: "Bespoke Optical Creation",
+          brand: "OPTICAL",
+          quantity: 1,
+          unitPrice: ord.grandTotal,
+          hasPrescription: true,
+        }];
+
+    const subtotal = ord.subtotal || ord.grandTotal;
+    const discount = ord.discount || 0;
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const totalTax = Math.max(0, ord.grandTotal - taxableAmount);
+    const cgst = totalTax / 2;
+    const sgst = totalTax / 2;
+
+    setReceiptData({
+      orderId: ord.id,
+      date: formattedDate,
+      time: formattedTime,
+      clientName: ord.clientName,
+      clientPhone: ord.clientPhone || selectedClient?.phone,
+      clientLocation: ord.clientLocation || selectedClient?.location,
+      billType: billType,
+      paymentMethod: ord.paymentMethod ? ord.paymentMethod.replace(/_/g, " ") : "Cash",
+      items,
+      subtotal,
+      discount,
+      taxableAmount,
+      cgst,
+      sgst,
+      igst: 0,
+      totalTax,
+      grandTotal: ord.grandTotal,
+      advancePaid: ord.advancePaid,
+      remainingBalance: ord.remainingBalance,
+      isAdvance: ord.remainingBalance > 0,
+      rxData: selectedClient?.latestPrescription ? {
+        rightSph: selectedClient.latestPrescription.rightSph,
+        rightCyl: selectedClient.latestPrescription.rightCyl,
+        rightAxis: selectedClient.latestPrescription.rightAxis,
+        rightAdd: selectedClient.latestPrescription.rightAdd,
+        leftSph: selectedClient.latestPrescription.leftSph,
+        leftCyl: selectedClient.latestPrescription.leftCyl,
+        leftAxis: selectedClient.latestPrescription.leftAxis,
+        leftAdd: selectedClient.latestPrescription.leftAdd,
+        pdBinocular: selectedClient.latestPrescription.pdBinocular,
+        doctorName: selectedClient.latestPrescription.doctorName || "Dr. A. Sharma",
+      } : undefined,
+    });
   };
 
   return (
@@ -727,15 +810,15 @@ export default function POSPage() {
                       </div>
                     </div>
 
-                    {ord.remainingBalance > 0 ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <button
                         type="button"
-                        onClick={() => handleSettleOrder(ord.id)}
+                        onClick={() => handleOpenActiveOrderReceipt(ord)}
                         style={{
-                          padding: "5px 10px",
-                          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                          color: "#fff",
-                          border: "none",
+                          padding: "5px 9px",
+                          background: "rgba(212, 175, 55, 0.12)",
+                          border: "1px solid rgba(212, 175, 55, 0.3)",
+                          color: "#d4af37",
                           borderRadius: "6px",
                           fontSize: "0.72rem",
                           fontWeight: 600,
@@ -744,14 +827,37 @@ export default function POSPage() {
                           alignItems: "center",
                           gap: "4px",
                         }}
+                        title="View or Print Tax Invoice"
                       >
-                        <DollarSign size={12} /> Settle & Deliver
+                        <Receipt size={12} /> Bill
                       </button>
-                    ) : (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", color: "#34d399", fontWeight: 600 }}>
-                        <Check size={13} /> Paid
-                      </span>
-                    )}
+
+                      {ord.remainingBalance > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSettleOrder(ord.id)}
+                          style={{
+                            padding: "5px 10px",
+                            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "6px",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <DollarSign size={12} /> Settle & Deliver
+                        </button>
+                      ) : (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", color: "#34d399", fontWeight: 600 }}>
+                          <Check size={13} /> Paid
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1015,62 +1121,11 @@ export default function POSPage() {
         }}
       />
 
-      {/* Sales Receipt Modal */}
-      {receiptData && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
-          <div style={{ background: "#0f172a", border: "1px solid rgba(212, 175, 55, 0.4)", borderRadius: "16px", padding: "1.5rem", maxWidth: "420px", width: "100%", color: "#f8fafc", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Receipt size={22} color="#d4af37" />
-              <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>{saasConfig.appName} Tax Invoice</h3>
-                <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Order ID: #{receiptData.id} | {receiptData.billType}</span>
-              </div>
-            </div>
-
-            <div style={{ background: "rgba(2, 6, 23, 0.8)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.85rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Customer:</span>
-                <strong>{receiptData.clientName}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Order Number:</span>
-                <strong style={{ color: "#d4af37" }}>{receiptData.id}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Grand Total:</span>
-                <strong>{saasConfig.currency}{receiptData.grandTotal.toFixed(2)}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#34d399" }}>
-                <span>Paid Today:</span>
-                <strong>{saasConfig.currency}{receiptData.advancePaid.toFixed(2)}</strong>
-              </div>
-
-              {receiptData.isAdvance && (
-                <div style={{ display: "flex", justifyContent: "space-between", color: "#f87171", fontWeight: 700, paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                  <span>Remaining Due on Delivery:</span>
-                  <span>{saasConfig.currency}{receiptData.remainingBalance.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setReceiptData(null)}
-              style={{
-                padding: "10px",
-                background: "linear-gradient(135deg, #d4af37 0%, #b8860b 100%)",
-                color: "#0b0f19",
-                fontWeight: 700,
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-              }}
-            >
-              Close & Print Invoice
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Sales Receipt / Thermal Print Modal */}
+      <ThermalReceiptModal
+        data={receiptData}
+        onClose={() => setReceiptData(null)}
+      />
     </div>
   );
 }

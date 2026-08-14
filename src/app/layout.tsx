@@ -11,10 +11,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 // Global styles apply to the entire app (resets, CSS variables, fonts)
 
-import Sidebar from "@/components/layout/Sidebar";
-import Topbar from "@/components/layout/Topbar";
 import AuthProvider from "@/components/providers/AuthProvider";
-import styles from "@/components/layout/AppShell.module.css";
+import AppShell from "@/components/layout/AppShell";
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 // This automatically generates <title> and <meta description> tags
@@ -47,21 +45,7 @@ export default function RootLayout({
       */}
       <body>
         <AuthProvider>
-          <div className={styles.appShell}>
-            {/* Sidebar — always visible, fixed left */}
-            <Sidebar />
-
-            {/* Right side: Topbar + page content */}
-            <div className={styles.rightPane}>
-              {/* Topbar — sticky across all pages */}
-              <Topbar />
-
-              {/* Page content area */}
-              <main className={styles.mainContent} id="main-content">
-                {children}
-              </main>
-            </div>
-          </div>
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>

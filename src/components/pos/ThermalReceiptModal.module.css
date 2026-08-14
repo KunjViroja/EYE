@@ -1,0 +1,314 @@
+/* ─── Thermal Receipt Modal Overlay ───────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 12, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 94vh;
+  max-width: 440px;
+  width: 100%;
+}
+
+/* Modal action bar */
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(18, 24, 38, 0.95);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.actionTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.printBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #d4af37 0%, #e8c84a 100%);
+  color: #0a0d12;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.25);
+}
+
+.printBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+/* ─── Thermal Paper Scroll Container ─────────────────────────────────────── */
+.scrollWrapper {
+  overflow-y: auto;
+  max-height: calc(94vh - 80px);
+  padding: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ─── The Physical Thermal Bill Slip (80mm style) ────────────────────────── */
+.receiptSlip {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  color: #111827;
+  font-family: 'Courier New', Courier, monospace, -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 24px 20px;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Header */
+.receiptHeader {
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #4b5563;
+}
+
+.storeName {
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+  color: #000000;
+}
+
+.storeTagline {
+  font-size: 10px;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.storeMeta {
+  font-size: 10px;
+  color: #374151;
+}
+
+/* Meta info row */
+.metaGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 0;
+  font-size: 11px;
+  border-bottom: 1px dashed #4b5563;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Prescription Section on Bill */
+.rxSection {
+  padding: 8px 0;
+  border-bottom: 1px dashed #4b5563;
+  font-size: 10px;
+}
+
+.rxTitle {
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.03em;
+}
+
+.rxTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.rxTable th, .rxTable td {
+  border: 1px solid #9ca3af;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.rxTable th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+/* Line items table */
+.itemsTable {
+  width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.itemsTable th {
+  text-align: left;
+  border-bottom: 1px solid #111827;
+  padding: 4px 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.itemsTable td {
+  padding: 4px 0;
+  vertical-align: top;
+}
+
+.itemSub {
+  font-size: 9px;
+  color: #6b7280;
+}
+
+/* Financial Totals */
+.totalsSection {
+  padding: 8px 0;
+  border-top: 1px dashed #4b5563;
+  border-bottom: 1px dashed #4b5563;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.grandTotalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 900;
+  padding-top: 4px;
+  border-top: 1px solid #111827;
+  color: #000000;
+}
+
+.advanceRow {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #047857;
+}
+
+.balanceRow {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 900;
+  color: #b91c1c;
+  font-size: 12px;
+  padding: 3px 0;
+  background: #fef2f2;
+}
+
+/* Footer */
+.receiptFooter {
+  text-align: center;
+  padding-top: 12px;
+  font-size: 10px;
+  color: #4b5563;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.footerThanks {
+  font-weight: 800;
+  color: #111827;
+}
+
+.barcodeBox {
+  margin: 8px auto 4px;
+  letter-spacing: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* ─── PRINT MEDIA STYLES ─────────────────────────────────────────────────── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receiptSlip, .receiptSlip * {
+    visibility: visible;
+  }
+
+  .receiptSlip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    box-shadow: none !important;
+    padding: 10px !important;
+    border-radius: 0 !important;
+  }
+
+  .overlay {
+    background: none !important;
+    backdrop-filter: none !important;
+    position: static !important;
+  }
+
+  .actionBar {
+    display: none !important;
+  }
+}

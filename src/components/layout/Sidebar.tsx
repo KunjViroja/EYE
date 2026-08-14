@@ -17,22 +17,23 @@ import {
 import styles from "./Sidebar.module.css";
 
 interface NavItem {
+  id: string;
   href: string;
   label: string;
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 }
 
 const mainNavItems: NavItem[] = [
-  { href: "/insights",    label: "Insights",     icon: BarChart2   },
-  { href: "/pos",         label: "Boutique POS", icon: ShoppingBag },
-  { href: "/collections", label: "Collections",  icon: Package     },
-  { href: "/clientele",   label: "Clientele",    icon: Users       },
-  { href: "/analytics",   label: "Analytics",    icon: TrendingUp  },
+  { id: "tour-insights",    href: "/insights",    label: "Insights",     icon: BarChart2   },
+  { id: "tour-pos",         href: "/pos",         label: "Boutique POS", icon: ShoppingBag },
+  { id: "tour-collections", href: "/collections", label: "Collections",  icon: Package     },
+  { id: "tour-clientele",   href: "/clientele",   label: "Clientele",    icon: Users       },
+  { id: "tour-analytics",   href: "/analytics",   label: "Analytics",    icon: TrendingUp  },
 ];
 
 const managementNavItems: NavItem[] = [
-  { href: "/staff",    label: "Staff",    icon: UserCircle },
-  { href: "/settings", label: "Settings", icon: Settings   },
+  { id: "tour-staff",    href: "/staff",    label: "Staff",    icon: UserCircle },
+  { id: "tour-settings", href: "/settings", label: "Settings", icon: Settings   },
 ];
 
 export default function Sidebar() {
@@ -63,6 +64,7 @@ export default function Sidebar() {
           return (
             <Link
               key={item.href}
+              id={item.id}
               href={item.href}
               className={`${styles.navItem} ${isActive ? styles.active : ""}`}
               aria-current={isActive ? "page" : undefined}
@@ -86,6 +88,7 @@ export default function Sidebar() {
           return (
             <Link
               key={item.href}
+              id={item.id}
               href={item.href}
               className={`${styles.navItem} ${isActive ? styles.active : ""}`}
               aria-current={isActive ? "page" : undefined}

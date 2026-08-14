@@ -154,6 +154,20 @@
   line-height: 1.4;
 }
 
+/* ─── Verified Banner ──────────────────────────────────────────────────────── */
+.verifiedBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #a7f3d0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
 /* ─── Success Card ────────────────────────────────────────────────────────── */
 .successCard {
   background: rgba(16, 185, 129, 0.07);

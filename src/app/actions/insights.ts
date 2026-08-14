@@ -16,9 +16,27 @@ export interface CollectionMixItem {
   color: string;
 }
 
-// ─── Cached Internal Insights Query (30-second TTL + Tag Invalidation) ────────
-const getCachedInsightsQuery = unstable_cache(
-  async (shopId: string) => {
+export async function getInsightsData() {
+  try {
+    const shopId = await getShopId();
+
+    if (!shopId) {
+      return {
+        success: false,
+        error: "Shop not found. Please log in.",
+        data: {
+          grossRevenue: 0,
+          totalSalesCount: 0,
+          avgBoutiqueValue: 0,
+          totalClientsCount: 0,
+          recentSales: [],
+          revenueStream: [],
+          collectionMix: [],
+          alerts: [],
+        },
+      };
+    }
+
     // 1. Calculate Gross Revenue (actual collected money) & Total Sales Count
     const salesAggregate = await prisma.sale.aggregate({
       where: {
@@ -59,71 +77,79 @@ const getCachedInsightsQuery = unstable_cache(
         items: {
           take: 1,
           select: {
-            quantity: true,
             product: {
-              select: { name: true, brand: true, category: true },
+              select: { name: true, brand: true },
             },
           },
         },
       },
     });
 
-    const recentSales = recentSalesFromDb.map((s) => ({
-      id: s.id,
-      clientName: s.client?.name || "Walk-in Client",
-      clientInitials: s.client?.name
-        ? s.client.name
-            .split(" ")
-            .map((n: string) => n[0])
-            .join("")
-            .toUpperCase()
-        : "CL",
-      product: s.items[0]?.product?.name || "Bespoke Eyewear",
-      amount: s.grandTotal,
-      advancePaid: s.advancePaid,
-      remainingBalance: s.remainingBalance,
-      status: s.status === "COMPLETED" ? ("Completed" as const) : ("Processing" as const),
-    }));
+    const recentSales = recentSalesFromDb.map((sale) => {
+      const name = sale.client?.name || "Walk-in Guest";
+      const initials = name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
 
-    // 4. Live 7-Day Revenue Stream Chart Points
+      return {
+        id: sale.id,
+        clientName: name,
+        clientInitials: initials || "WG",
+        product: sale.items[0]?.product?.name || "Bespoke Optical Creation",
+        productName: sale.items[0]?.product?.name || "Bespoke Optical Creation",
+        amount: sale.grandTotal,
+        advancePaid: sale.advancePaid,
+        remainingBalance: sale.remainingBalance,
+        status: (sale.status === "COMPLETED" ? "Completed" : "Processing") as "Completed" | "Processing" | "Pending",
+        date: new Date(sale.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      };
+    });
+
+    // 4. Generate Daily Revenue Stream (last 7 days from live sales)
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const pastWeekSales = await prisma.sale.findMany({
+    const weeklySales = await prisma.sale.findMany({
       where: {
         shopId,
         createdAt: { gte: sevenDaysAgo },
       },
-      include: {
+      select: {
+        createdAt: true,
+        advancePaid: true,
         items: {
-          include: {
+          select: {
+            unitPrice: true,
+            quantity: true,
             product: { select: { category: true } },
           },
         },
       },
     });
 
-    const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const revenueMap = new Map<string, { designerFrames: number; bespokeLenses: number }>();
 
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const label = dayLabels[d.getDay()];
-      revenueMap.set(label, { designerFrames: 0, bespokeLenses: 0 });
+      const dayName = days[d.getDay()];
+      revenueMap.set(dayName, { designerFrames: 0, bespokeLenses: 0 });
     }
 
-    for (const sale of pastWeekSales) {
-      const dayLabel = dayLabels[new Date(sale.createdAt).getDay()];
-      const entry = revenueMap.get(dayLabel);
-      if (entry) {
+    for (const sale of weeklySales) {
+      const dayName = days[new Date(sale.createdAt).getDay()];
+      if (revenueMap.has(dayName)) {
+        const current = revenueMap.get(dayName)!;
         for (const item of sale.items) {
-          const itemVal = item.unitPrice * item.quantity;
-          if (item.product?.category === "BESPOKE_LENSES") {
-            entry.bespokeLenses += itemVal;
+          const itemTotal = item.unitPrice * item.quantity;
+          if (item.product?.category === "FRAMES") {
+            current.designerFrames += itemTotal;
           } else {
-            entry.designerFrames += itemVal;
+            current.bespokeLenses += itemTotal;
           }
         }
       }
@@ -188,33 +214,33 @@ const getCachedInsightsQuery = unstable_cache(
 
     const alerts = [
       ...lowStockProducts.map((p) => ({
-        id: `low-stock-${p.name}`,
-        type: "restock" as const,
+        id: `low-stock-${p.brand}-${p.name}`,
+        type: "LOW_STOCK",
         title: "Low Inventory Alert",
-        description: `${p.brand} ${p.name} has only ${p.stock} piece${p.stock === 1 ? "" : "s"} left in stock.`,
-        actionLabel: "Order Stock",
+        description: `${p.brand} ${p.name} has only ${p.stock} units left in boutique.`,
+        actionLabel: "Restock in Inventory",
       })),
       ...(pendingOrdersCount > 0
         ? [
             {
-              id: "pending-orders-alert",
-              type: "vvip" as const,
-              title: "Pending Balance Due",
-              description: `You have ${pendingOrdersCount} active customer order${pendingOrdersCount === 1 ? "" : "s"} with advance balances pending collection.`,
-              actionLabel: "View Orders",
+              id: "pending-orders",
+              type: "PENDING_DELIVERY",
+              title: "Pending Orders Due",
+              description: `${pendingOrdersCount} client order${pendingOrdersCount === 1 ? "" : "s"} waiting for remaining balance / delivery.`,
+              actionLabel: "View in POS Terminal",
             },
           ]
         : []),
       ...dbAlerts.map((a) => ({
         id: a.id,
-        type: (a.type.toLowerCase() as "restock" | "vvip" | "info") || "info",
+        type: a.type,
         title: a.title,
         description: a.description,
         actionLabel: a.actionLabel || undefined,
       })),
     ];
 
-    return {
+    const data = {
       grossRevenue,
       totalSalesCount,
       avgBoutiqueValue,
@@ -224,36 +250,6 @@ const getCachedInsightsQuery = unstable_cache(
       collectionMix,
       alerts,
     };
-  },
-  ["insights-dashboard-cache"],
-  {
-    revalidate: 30,
-    tags: ["insights-cache"],
-  }
-);
-
-export async function getInsightsData() {
-  try {
-    const shopId = await getShopId();
-
-    if (!shopId) {
-      return {
-        success: false,
-        error: "Shop not found. Please log in.",
-        data: {
-          grossRevenue: 0,
-          totalSalesCount: 0,
-          avgBoutiqueValue: 0,
-          totalClientsCount: 0,
-          recentSales: [],
-          revenueStream: [],
-          collectionMix: [],
-          alerts: [],
-        },
-      };
-    }
-
-    const data = await getCachedInsightsQuery(shopId);
 
     return {
       success: true,

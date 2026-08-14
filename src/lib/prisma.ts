@@ -28,20 +28,30 @@ const connectionString =
 if (!globalForPrisma.pgPool) {
   globalForPrisma.pgPool = new Pool({
     connectionString,
-    max: 10, // Max concurrent connections in pool
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    max: 20, // Max concurrent connections in pool
+    idleTimeoutMillis: 60000, // Keep idle connections alive for 60s
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    ssl: connectionString?.includes("supabase.com")
+      ? { rejectUnauthorized: false }
+      : undefined,
+  });
+
+  globalForPrisma.pgPool.on("error", (err) => {
+    console.error("Unexpected PG pool client error:", err.message);
   });
 }
 
-const adapter = new PrismaPg(globalForPrisma.pgPool);
-
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
+if (!globalForPrisma.prisma) {
+  const adapter = new PrismaPg(globalForPrisma.pgPool);
+  globalForPrisma.prisma = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
+}
+
+export const prisma = globalForPrisma.prisma;
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

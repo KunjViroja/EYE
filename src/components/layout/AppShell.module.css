@@ -10,6 +10,12 @@
   min-height: 100vh;
 }
 
+.standaloneContent {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--color-bg);
+}
+
 /* Right pane: holds the sticky topbar + scrollable content */
 .rightPane {
   flex: 1;

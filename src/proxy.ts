@@ -5,13 +5,18 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const token =
-    req.cookies.get("authjs.session-token") ||
     req.cookies.get("__Secure-authjs.session-token") ||
+    req.cookies.get("authjs.session-token") ||
+    req.cookies.get("__Secure-next-auth.session-token") ||
     req.cookies.get("next-auth.session-token");
 
   const isLoggedIn = !!token;
 
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/verify-email");
+  const isAuthRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/verify-email");
+
   const isProtectedDashboardRoute =
     pathname.startsWith("/insights") ||
     pathname.startsWith("/collections") ||
@@ -19,11 +24,15 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/clientele") ||
     pathname.startsWith("/analytics") ||
     pathname.startsWith("/staff") ||
-    pathname.startsWith("/settings");
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/welcome");
 
   // 1. Unauthenticated users visiting root or protected routes redirect to /login
   if ((isProtectedDashboardRoute || pathname === "/") && !isLoggedIn) {
     const loginUrl = new URL("/login", req.url);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("callbackUrl", req.url);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
@@ -46,8 +55,10 @@ export const config = {
     "/analytics/:path*",
     "/staff/:path*",
     "/settings/:path*",
+    "/welcome/:path*",
     "/login",
     "/register",
     "/verify-email",
   ],
 };
+

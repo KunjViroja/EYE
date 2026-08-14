@@ -33,15 +33,20 @@ export interface CreateProductInput {
   };
 }
 
-// ─── CACHED INTERNAL PRODUCT QUERY (Sub-2ms Server Response) ───────────────────
-const getCachedProductsQuery = unstable_cache(
-  async (
-    shopId: string,
-    category?: string,
-    query?: string,
-    cursor?: string,
-    take: number = 20
-  ) => {
+// ─── Direct High-Performance Product Query (Instant Live Sync) ─────────────────
+export async function getProducts(
+  category?: string,
+  query?: string,
+  cursor?: string,
+  take: number = 20
+) {
+  try {
+    const shopId = await getShopId();
+
+    if (!shopId) {
+      return { success: false, error: "Shop not found" };
+    }
+
     const where: Prisma.ProductWhereInput = {
       shopId,
     };
@@ -85,47 +90,10 @@ const getCachedProductsQuery = unstable_cache(
     const nextCursor = hasMore ? data[data.length - 1]?.id : null;
 
     return {
+      success: true,
       data,
       nextCursor,
       hasMore,
-    };
-  },
-  ["products-catalog-cache"],
-  {
-    revalidate: 60, // 60 seconds auto TTL
-    tags: ["products-cache"],
-  }
-);
-
-/**
- * ✅ HIGH PERFORMANCE: Cached + Multi-Tenant Isolated Product Fetch
- */
-export async function getProducts(
-  category?: string,
-  query?: string,
-  cursor?: string,
-  take: number = 20
-) {
-  try {
-    const shopId = await getShopId();
-
-    if (!shopId) {
-      return { success: false, error: "Shop not found" };
-    }
-
-    const result = await getCachedProductsQuery(
-      shopId,
-      category,
-      query,
-      cursor,
-      take
-    );
-
-    return {
-      success: true,
-      data: result.data,
-      nextCursor: result.nextCursor,
-      hasMore: result.hasMore,
       timestamp: Date.now(),
     };
   } catch (error) {

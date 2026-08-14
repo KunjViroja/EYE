@@ -253,11 +253,24 @@
 
 .acquisitionsHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
 .acquisitionsTitle { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--color-text-primary); }
-.fullLedger { font-size: 10px; font-weight: var(--font-bold); letter-spacing: 0.1em; color: var(--color-gold-dark); cursor: pointer; }
+.fullLedger { 
+  font-size: 11px; 
+  font-weight: var(--font-bold); 
+  letter-spacing: 0.05em; 
+  color: var(--color-gold); 
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
 .acquisitionsList { display: flex; flex-direction: column; gap: var(--space-4); }
 .emptyAcquisitions { font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; padding: var(--space-2) 0; }
-.acquisitionRow { display: flex; align-items: center; gap: var(--space-3); }
+.acquisitionRow { display: flex; align-items: center; gap: var(--space-3); padding: 8px; border-radius: 8px; transition: background 0.15s; }
+.acquisitionRow:hover { background: rgba(255, 255, 255, 0.03); }
 .acqImg { width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--color-bg); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .acqInfo { flex: 1; }
 .acqProduct { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-text-primary); }
@@ -267,4 +280,25 @@
 .acqStatus { font-weight: var(--font-bold); letter-spacing: 0.05em; }
 .acqStatusDelivered { color: var(--color-success); }
 .acqStatusProcessing { color: var(--color-info); }
-.acqAmount { font-size: var(--text-base); font-weight: var(--font-bold); color: var(--color-text-primary); }
+.acqRight { display: flex; align-items: center; gap: 12px; }
+.acqAmount { font-size: var(--text-base); font-weight: var(--font-bold); color: var(--color-text-primary); text-align: right; }
+.viewInvoiceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.viewInvoiceBtn:hover {
+  background: rgba(212, 175, 55, 0.22);
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #ffffff;
+}

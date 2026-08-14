@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { PaymentMethod, SaleStatus, Prisma } from "@prisma/client";
+import { PaymentMethod, SaleStatus, Prisma, ProductCategory } from "@prisma/client";
 import { getShopId } from "@/lib/shopAuth";
 
 export interface POSCartItemInput {
@@ -27,12 +27,166 @@ export interface ProcessSaleInput {
 export interface ActiveOrderRecord {
   id: string;
   clientName: string;
+  clientPhone?: string;
+  clientLocation?: string;
+  subtotal: number;
+  discount: number;
   grandTotal: number;
   advancePaid: number;
   remainingBalance: number;
   status: "PROCESSING_ADVANCE" | "DELIVERED_PAID";
   paymentMethod: string;
   createdAt: string;
+  items: Array<{
+    name: string;
+    brand: string;
+    quantity: number;
+    unitPrice: number;
+    hasPrescription: boolean;
+  }>;
+}
+
+// ─── Consolidated High-Speed Single-Roundtrip POS Data Action ─────────────────
+export interface POSInitialData {
+  products: any[];
+  clients: any[];
+  activeOrders: ActiveOrderRecord[];
+}
+
+export async function getPOSInitialData(
+  category?: string,
+  query?: string
+): Promise<{ success: boolean; data?: POSInitialData; error?: string }> {
+  try {
+    const shopId = await getShopId();
+
+    if (!shopId) {
+      return { success: false, error: "Shop not found" };
+    }
+
+    const whereProducts: Prisma.ProductWhereInput = { shopId };
+    if (category && category !== "All") {
+      const formattedCategory = category.toUpperCase();
+      if (formattedCategory in ProductCategory) {
+        whereProducts.category = formattedCategory as ProductCategory;
+      }
+    }
+    if (query && query.trim() !== "") {
+      whereProducts.OR = [
+        { brand: { contains: query, mode: "insensitive" } },
+        { name: { contains: query, mode: "insensitive" } },
+        { sku: { contains: query, mode: "insensitive" } },
+      ];
+    }
+
+    const [products, clients, salesFromDb] = await Promise.all([
+      prisma.product.findMany({
+        where: whereProducts,
+        take: 30,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          brand: true,
+          name: true,
+          sku: true,
+          price: true,
+          category: true,
+          badge: true,
+          stock: true,
+          imageUrl: true,
+        },
+      }),
+      prisma.client.findMany({
+        where: { shopId },
+        take: 30,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          location: true,
+          tier: true,
+          prescriptions: {
+            select: {
+              id: true,
+              rightSph: true,
+              rightCyl: true,
+              rightAxis: true,
+              rightAdd: true,
+              leftSph: true,
+              leftCyl: true,
+              leftAxis: true,
+              leftAdd: true,
+              pdBinocular: true,
+              lensType: true,
+              lensIndex: true,
+              lensCoating: true,
+              doctorName: true,
+              visitDate: true,
+            },
+            orderBy: { lastVerified: "desc" },
+            take: 1,
+          },
+        },
+      }),
+      prisma.sale.findMany({
+        where: {
+          shopId,
+          OR: [
+            { remainingBalance: { gt: 0 } },
+            { status: SaleStatus.PROCESSING },
+          ],
+        },
+        include: {
+          client: {
+            select: { name: true, phone: true, location: true },
+          },
+          items: {
+            include: {
+              product: { select: { name: true, brand: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+    ]);
+
+    const activeOrders: ActiveOrderRecord[] = salesFromDb.map((s) => ({
+      id: s.id,
+      clientName: s.client?.name || "Client",
+      clientPhone: s.client?.phone || undefined,
+      clientLocation: s.client?.location || undefined,
+      subtotal: s.subtotal,
+      discount: s.discount,
+      grandTotal: s.grandTotal,
+      advancePaid: s.advancePaid,
+      remainingBalance: s.remainingBalance,
+      status: s.remainingBalance > 0 ? "PROCESSING_ADVANCE" : "DELIVERED_PAID",
+      paymentMethod: s.paymentMethod,
+      createdAt: s.createdAt.toISOString(),
+      items: s.items.map((it) => ({
+        name: it.product?.name || "Eyewear",
+        brand: it.product?.brand || "OPTICAL",
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        hasPrescription: it.hasPrescription,
+      })),
+    }));
+
+    return {
+      success: true,
+      data: {
+        products,
+        clients,
+        activeOrders,
+      },
+    };
+  } catch (err: any) {
+    console.error("Error loading POS initial data:", err);
+    return { success: false, error: err?.message || "Failed to load POS data" };
+  }
 }
 
 // ─── Fetch Active / Pending Advance Orders From Database ─────────────────────
@@ -54,7 +208,12 @@ export async function getActiveOrders(): Promise<{ success: boolean; data: Activ
       },
       include: {
         client: {
-          select: { name: true },
+          select: { name: true, phone: true, location: true },
+        },
+        items: {
+          include: {
+            product: { select: { name: true, brand: true } },
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -64,12 +223,23 @@ export async function getActiveOrders(): Promise<{ success: boolean; data: Activ
     const data: ActiveOrderRecord[] = salesFromDb.map((s) => ({
       id: s.id,
       clientName: s.client?.name || "Client",
+      clientPhone: s.client?.phone || undefined,
+      clientLocation: s.client?.location || undefined,
+      subtotal: s.subtotal,
+      discount: s.discount,
       grandTotal: s.grandTotal,
       advancePaid: s.advancePaid,
       remainingBalance: s.remainingBalance,
       status: s.remainingBalance > 0 ? "PROCESSING_ADVANCE" : "DELIVERED_PAID",
       paymentMethod: s.paymentMethod,
       createdAt: s.createdAt.toISOString(),
+      items: s.items.map((it) => ({
+        name: it.product?.name || "Eyewear",
+        brand: it.product?.brand || "OPTICAL",
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        hasPrescription: it.hasPrescription,
+      })),
     }));
 
     return { success: true, data };
