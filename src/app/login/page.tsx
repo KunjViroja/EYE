@@ -1,63 +1,32 @@
 import AuthForm from "@/components/auth/AuthForm";
-import { Eye, ShieldCheck, Sparkles } from "lucide-react";
+import type { Metadata } from "next";
 import styles from "./LoginPage.module.css";
 
-export const metadata = {
-  title: "EYE Portal — EYE Management",
-  description: "Executive access portal for EYE Luxury Eyewear",
+export const metadata: Metadata = {
+  title: "Sign In — OptiPay",
+  description: "Sign in to OptiPay to manage your optical store, inventory, clients, and sales.",
 };
 
 export default function LoginPage() {
   return (
-    <div className={styles.page}>
-      {/* ─── Left Editorial Showcase Panel ─────────────────────────────────── */}
-      <section className={styles.leftShowcase}>
-        <div className={styles.leftBgGlow} aria-hidden="true" />
+    <main className={styles.page}>
+      {/* Ambient background glows */}
+      <div className={styles.glowTopLeft} aria-hidden="true" />
+      <div className={styles.glowBottomRight} aria-hidden="true" />
 
-        {/* Brand Header */}
-        <div className={styles.brandHeader}>
-          <div className={styles.brandLogoWrap}>
-            <Eye size={22} color="#0A0D12" strokeWidth={2.5} />
-          </div>
-          <div>
-            <h1 className={styles.brandTitle}>EYE</h1>
-            <p className={styles.brandSubtitle}>EYE Portal</p>
-          </div>
-        </div>
-
-        {/* Editorial Body Statement */}
-        <div className={styles.editorialBody}>
-          <div className={styles.editorialTag}>
-            <span className={styles.editorialTagLine} />
-            Boutique Operations & Vision Blueprints
-          </div>
-
-          <h2 className={styles.statement}>
-            Precision Vision.
-            <br />
-            <span className={styles.statementGold}>Unrivaled Luxury.</span>
-          </h2>
-
-          <p className={styles.editorialDesc}>
-            Elevate bespoke optical client management, active prescriptions, and luxury collection curation with real-time analytics.
-          </p>
-        </div>
-
-        {/* Status Node Footer */}
-        <footer className={styles.leftFooter}>
-          <div className={styles.nodeStatus}>
-            <span className={styles.nodeDot} />
-            <span>EYE Executive System Active</span>
-          </div>
-          <span>© 2026 EYE Inc.</span>
-        </footer>
-      </section>
-
-      {/* ─── Right Glassmorphic Form Panel ─────────────────────────────────── */}
-      <section className={styles.rightPanel}>
-        <div className={styles.rightBgGlow} aria-hidden="true" />
+      {/* Centered form card */}
+      <div className={styles.card}>
         <AuthForm />
-      </section>
-    </div>
+      </div>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <span>© 2026 OptiPay</span>
+        <span className={styles.footerDot}>·</span>
+        <a href="#" className={styles.footerLink}>Privacy</a>
+        <span className={styles.footerDot}>·</span>
+        <a href="#" className={styles.footerLink}>Terms</a>
+      </footer>
+    </main>
   );
 }

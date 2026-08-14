@@ -2,10 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Role, ProductCategory, ProductBadge, MemberTier } from "@prisma/client";
+import { ProductCategory, ProductBadge, MemberTier } from "@prisma/client";
+import { getShopId } from "@/lib/shopAuth";
 
 export async function seedSampleData() {
   try {
+    const shopId = await getShopId();
     // 1. Create Products
     const productsData = [
       {
@@ -45,12 +47,13 @@ export async function seedSampleData() {
     ];
 
     for (const prod of productsData) {
-      await prisma.product.create({ data: prod });
+      await prisma.product.create({ data: { ...prod, shopId } });
     }
 
     // 2. Create Client
     await prisma.client.create({
       data: {
+        shopId,
         name: "Sofia Jensen",
         email: `sofia.${Date.now()}@luxury.com`,
         phone: "+1 (555) 012-3456",

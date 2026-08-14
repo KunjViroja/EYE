@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { createProduct } from "@/app/actions/products";
 import { ProductCategory, ProductBadge } from "@/lib/types";
 import styles from "./NewProductModal.module.css";
+import { saasConfig } from "@/config/saasConfig";
 
 interface Props {
   isOpen: boolean;
@@ -134,7 +135,7 @@ export default function NewProductModal({ isOpen, onClose, onSuccess }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="prod-price">Retail Price ($) *</label>
+              <label className={styles.label} htmlFor="prod-price">Retail Price ({saasConfig.currency}) *</label>
               <input
                 id="prod-price"
                 type="number"
@@ -148,7 +149,7 @@ export default function NewProductModal({ isOpen, onClose, onSuccess }: Props) {
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="prod-cost">Cost Price ($)</label>
+              <label className={styles.label} htmlFor="prod-cost">Cost Price ({saasConfig.currency})</label>
               <input
                 id="prod-cost"
                 type="number"

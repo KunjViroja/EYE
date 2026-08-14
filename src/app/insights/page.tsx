@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getInsightsData } from "@/app/actions/insights";
+import { useState, useEffect, useCallback } from "react";
+import { getInsightsData, RevenueDataPoint, CollectionMixItem } from "@/app/actions/insights";
 import StatCard from "@/components/insights/StatCard";
 import RevenueChart from "@/components/insights/RevenueChart";
 import CollectionMixChart from "@/components/insights/CollectionMixChart";
@@ -10,6 +10,7 @@ import EyeAlerts from "@/components/insights/EyeAlerts";
 import shellStyles from "@/components/layout/AppShell.module.css";
 import styles from "./InsightsPage.module.css";
 import { RefreshCw } from "lucide-react";
+import { saasConfig } from "@/config/saasConfig";
 
 export interface StatCardItem {
   id: string;
@@ -28,67 +29,71 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true);
 
   const [stats, setStats] = useState<StatCardItem[]>([
-    { id: "gross-revenue", label: "Gross Revenue", value: "$0", change: 0, changeLabel: "Live", trend: "stable", icon: "dollar" },
-    { id: "total-sales", label: "Total Sales", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "bag" },
-    { id: "avg-boutique-value", label: "Avg. Boutique Value", value: "$0", change: 0, changeLabel: "Live", trend: "stable", icon: "sparkles" },
-    { id: "new-clients", label: "New Clients", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "users" },
+    { id: "gross-revenue", label: "Gross Revenue", value: `${saasConfig.currency}0`, change: 0, changeLabel: "Live", trend: "stable", icon: "dollar" },
+    { id: "total-sales", label: "Total Invoices", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "bag" },
+    { id: "avg-boutique-value", label: "Avg. Sale Value", value: `${saasConfig.currency}0`, change: 0, changeLabel: "Live", trend: "stable", icon: "sparkles" },
+    { id: "new-clients", label: "Active Clients", value: "0", change: 0, changeLabel: "Live", trend: "stable", icon: "users" },
   ]);
 
   const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [revenueStream, setRevenueStream] = useState<RevenueDataPoint[]>([]);
+  const [collectionMix, setCollectionMix] = useState<CollectionMixItem[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  useEffect(() => {
-    async function loadLiveInsights() {
-      setLoading(true);
-      const res = await getInsightsData();
-      if (res.success && res.data) {
-        setStats([
-          {
-            id: "gross-revenue",
-            label: "Gross Revenue",
-            value: `$${res.data.grossRevenue.toLocaleString()}`,
-            change: 0,
-            changeLabel: "Live",
-            trend: res.data.grossRevenue > 0 ? "up" : "stable",
-            icon: "dollar",
-          },
-          {
-            id: "total-sales",
-            label: "Total Sales",
-            value: res.data.totalSalesCount.toString(),
-            change: 0,
-            changeLabel: "Live",
-            trend: res.data.totalSalesCount > 0 ? "up" : "stable",
-            icon: "bag",
-          },
-          {
-            id: "avg-boutique-value",
-            label: "Avg. Boutique Value",
-            value: `$${res.data.avgBoutiqueValue.toLocaleString()}`,
-            change: 0,
-            changeLabel: "Live",
-            trend: "stable",
-            icon: "sparkles",
-          },
-          {
-            id: "new-clients",
-            label: "New Clients",
-            value: res.data.recentSales.length.toString(),
-            change: 0,
-            changeLabel: "Live",
-            trend: "stable",
-            icon: "users",
-          },
-        ]);
+  const loadLiveInsights = useCallback(async () => {
+    setLoading(true);
+    const res = await getInsightsData();
+    if (res.success && res.data) {
+      setStats([
+        {
+          id: "gross-revenue",
+          label: "Gross Revenue",
+          value: `${saasConfig.currency}${res.data.grossRevenue.toLocaleString("en-IN")}`,
+          change: 0,
+          changeLabel: "Collected",
+          trend: res.data.grossRevenue > 0 ? "up" : "stable",
+          icon: "dollar",
+        },
+        {
+          id: "total-sales",
+          label: "Total Invoices",
+          value: res.data.totalSalesCount.toString(),
+          change: 0,
+          changeLabel: "Transactions",
+          trend: res.data.totalSalesCount > 0 ? "up" : "stable",
+          icon: "bag",
+        },
+        {
+          id: "avg-boutique-value",
+          label: "Avg. Sale Value",
+          value: `${saasConfig.currency}${res.data.avgBoutiqueValue.toLocaleString("en-IN")}`,
+          change: 0,
+          changeLabel: "Per Order",
+          trend: "stable",
+          icon: "sparkles",
+        },
+        {
+          id: "new-clients",
+          label: "Active Clients",
+          value: (res.data.totalClientsCount || 0).toString(),
+          change: 0,
+          changeLabel: "Profiles",
+          trend: "stable",
+          icon: "users",
+        },
+      ]);
 
-        setRecentSales(res.data.recentSales || []);
-        setAlerts(res.data.alerts || []);
-      }
-      setLoading(false);
+      setRecentSales(res.data.recentSales || []);
+      setRevenueStream(res.data.revenueStream || []);
+      setCollectionMix(res.data.collectionMix || []);
+      setAlerts(res.data.alerts || []);
     }
-
-    loadLiveInsights();
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadLiveInsights();
+  }, [loadLiveInsights]);
 
   return (
     <div className={styles.page}>
@@ -97,12 +102,16 @@ export default function InsightsPage() {
         <div className={shellStyles.pageHeaderLeft}>
           <h1 className={shellStyles.pageTitle}>Executive Insights</h1>
           <p className={shellStyles.pageSubtitle}>
-            Welcome back, here&apos;s your live EYE performance dashboard
+            Live optical store dashboard and performance metrics for {saasConfig.storeName}.
           </p>
         </div>
 
         {/* Time Filter Tabs */}
         <div className={shellStyles.pageHeaderRight}>
+          <button type="button" className={styles.timeTab} onClick={loadLiveInsights} title="Refresh Insights">
+            <RefreshCw size={14} className={loading ? styles.spin : ""} />
+            Refresh
+          </button>
           {TIME_FILTERS.map((filter) => (
             <button
               key={filter}
@@ -135,8 +144,8 @@ export default function InsightsPage() {
 
             {/* Charts Row */}
             <div className={styles.chartsRow}>
-              <RevenueChart data={[]} />
-              <CollectionMixChart data={[]} />
+              <RevenueChart data={revenueStream} />
+              <CollectionMixChart data={collectionMix} />
             </div>
 
             {/* Bottom Row */}

@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import styles from "./RevenueChart.module.css";
 import { TrendingUp } from "lucide-react";
+import { saasConfig } from "@/config/saasConfig";
 
 export interface RevenueDataPoint {
   day: string;
@@ -39,7 +40,7 @@ function CustomTooltip({
       <p className={styles.tooltipLabel}>{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.color }} className={styles.tooltipValue}>
-          {entry.name}: ${entry.value.toLocaleString()}
+          {entry.name}: {saasConfig.currency}{entry.value.toLocaleString("en-IN")}
         </p>
       ))}
     </div>
@@ -47,6 +48,10 @@ function CustomTooltip({
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
+  const hasNonZeroData = data.some(
+    (d) => d.designerFrames > 0 || d.bespokeLenses > 0
+  );
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
@@ -57,7 +62,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       </div>
 
       <div className={styles.chartWrap}>
-        {data.length === 0 ? (
+        {!hasNonZeroData && data.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "180px", color: "var(--color-text-muted)", fontSize: "13px", gap: "8px" }}>
             <TrendingUp size={24} strokeWidth={1.5} opacity={0.5} />
             <span>No live transactions recorded yet. Process a POS sale to see live charts.</span>
@@ -76,7 +81,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => `${saasConfig.currency}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend

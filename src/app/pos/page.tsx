@@ -17,6 +17,7 @@ interface POSProduct {
   name: string;
   sku: string;
   price: number;
+  stock?: number;
   badge?: string;
   category: string;
 }
@@ -155,6 +156,7 @@ export default function POSPage() {
           name: p.name,
           sku: p.sku,
           price: p.price,
+          stock: p.stock,
           badge: p.badge ? p.badge.replace("_", " ") : undefined,
           category: p.category,
         }))
@@ -667,7 +669,14 @@ export default function POSPage() {
                   </div>
                   <div className={styles.tileBrand}>{p.brand}</div>
                   <div className={styles.tileName}>{p.name}</div>
-                  <div className={styles.tilePrice}>{saasConfig.currency}{p.price.toFixed(2)}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                    <div className={styles.tilePrice}>{saasConfig.currency}{p.price.toFixed(2)}</div>
+                    {p.stock !== undefined && (
+                      <span style={{ fontSize: "10px", color: p.stock <= 2 ? "#f87171" : "#94a3b8", fontWeight: 600 }}>
+                        {p.stock} left
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
 

@@ -12,6 +12,17 @@ enum Role {
   STYLIST
 }
 
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -20,12 +31,15 @@ model User {
   image         String?
   password      String?
   role          Role      @default(MANAGER)
+  
+  // ✅ CRITICAL: Each user owns exactly ONE shop
+  shop          Shop?
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
-  sales    Sale[]
 }
 
 model Account {
@@ -63,6 +77,45 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MULTI-TENANT SHOP MODEL
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Shop {
+  id          String @id @default(cuid())
+  ownerId     String @unique
+  name        String
+
+  // ✅ Shop contact & location (collected during onboarding)
+  phone       String?  // Owner/shop contact number
+  city        String?  // Shop city/location
+  shopType    String?  // e.g. "RETAIL_OPTICAL", "EYE_CLINIC", "BOTH"
+  
+  // ✅ Subscription & Billing
+  plan        SubscriptionPlan @default(FREE)
+  subscriptionEndsAt DateTime?
+  
+  // ✅ Plan limits based on tier
+  maxClients  Int @default(5)      // Free: 5, Basic: 100, Pro: unlimited
+  maxProducts Int @default(10)     // Free: 10, Basic: unlimited
+  
+  owner       User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // ✅ ALL shop data
+  clients     Client[]
+  products    Product[]
+  sales       Sale[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([ownerId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENUMS FOR PRODUCTS & SALES
+// ═══════════════════════════════════════════════════════════════════════════
+
 enum ProductCategory {
   FRAMES
   BESPOKE_LENSES
@@ -96,11 +149,17 @@ enum PaymentMethod {
   CASH
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PRODUCT MODEL (PER SHOP)
+// ═══════════════════════════════════════════════════════════════════════════
+
 model Product {
   id            String          @id @default(cuid())
+  shopId        String          // ✅ CRITICAL: Links to shop
+  
   brand         String
   name          String
-  sku           String          @unique
+  sku           String          // ✅ NO LONGER GLOBAL UNIQUE!
   price         Float
   costPrice     Float?
   imageUrl      String?
@@ -115,16 +174,30 @@ model Product {
   bridgeWidth   Int?
   templeLength  Int?
   gender        String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  saleItems SaleItem[]
+  
+  shop          Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  saleItems     SaleItem[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // ✅ CRITICAL INDEXES FOR PERFORMANCE
+  @@unique([shopId, sku])        // ← Each shop can have same SKU
+  @@index([shopId])              // ← Fast filter by shop
+  @@index([shopId, category])    // ← Fast filter by shop + category
+  @@index([shopId, brand])       // ← Fast search by brand
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLIENT MODEL (PER SHOP)
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Client {
   id                    String        @id @default(cuid())
+  shopId                String        // ✅ CRITICAL: Links to shop
+  
   name                  String
-  email                 String        @unique
+  email                 String        // ✅ NO LONGER GLOBAL UNIQUE!
   phone                 String?
   secondaryPhone        String?
   dob                   String?
@@ -135,25 +208,40 @@ model Client {
   medicalNotes          String?
   prescriptionMilestone String?
   totalSpent            Float         @default(0)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-
+  
+  shop          Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
   prescriptions Prescription[]
   sales         Sale[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // ✅ CRITICAL INDEXES FOR PERFORMANCE
+  @@unique([shopId, email])      // ← Each shop can have same email
+  @@index([shopId])              // ← Fast filter by shop
+  @@index([shopId, name])        // ← Fast search by name
+  @@index([shopId, createdAt])   // ← Fast sort by shop + date
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PRESCRIPTION MODEL
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Prescription {
   id             String   @id @default(cuid())
   clientId       String
+  
   lastVerified   DateTime @default(now())
   rightSph       Float    @default(0)
   rightCyl       Float    @default(0)
   rightAxis      Int      @default(0)
   rightAdd       Float    @default(0)
+  rightVision    String?
   leftSph        Float    @default(0)
   leftCyl        Float    @default(0)
   leftAxis       Int      @default(0)
   leftAdd        Float    @default(0)
+  leftVision     String?
   pdBinocular    Float?
   pdRight        Float?
   pdLeft         Float?
@@ -164,31 +252,60 @@ model Prescription {
   leftPrism      Float?
   leftBase       String?
   lensType       String?
+  lensFor        String?
   lensIndex      String?
   lensCoating    String?
+  doctorName     String?
+  visitDate      String?
   opticianNotes  String?
+  
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])            // ← Fast lookup by client
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SALE/ORDER MODEL (PER SHOP)
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Sale {
   id            String        @id @default(cuid())
+  shopId        String        // ✅ CRITICAL: Links to shop
   clientId      String?
-  userId        String?
+  userId        String?       // User who created the sale
+  
   subtotal      Float
   discount      Float         @default(0)
   grandTotal    Float
   status        SaleStatus    @default(COMPLETED)
   paymentMethod PaymentMethod @default(CREDIT_CARD)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  client Client?    @relation(fields: [clientId], references: [id])
-  user   User?      @relation(fields: [userId], references: [id])
-  items  SaleItem[]
+  
+  // ✅ Advance payment tracking
+  isAdvancePayment Boolean   @default(false)
+  advancePaid      Float     @default(0)
+  remainingBalance Float     @default(0)
+  
+  shop          Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  client        Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  items         SaleItem[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // ✅ CRITICAL INDEXES FOR PERFORMANCE
+  @@index([shopId])                 // ← Fast filter by shop
+  @@index([shopId, createdAt])      // ← Fast sorted queries
+  @@index([shopId, status])         // ← Fast filter by status
+  @@index([clientId])               // ← Fast lookup by client
+  @@index([userId])                 // ← Fast lookup by user
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SALE ITEM MODEL (Line items in a sale)
+// ═══════════════════════════════════════════════════════════════════════════
 
 model SaleItem {
   id              String  @id @default(cuid())
@@ -199,15 +316,52 @@ model SaleItem {
   hasPrescription Boolean @default(false)
 
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([saleId])
+  @@index([productId])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PURCHASE LOG MODEL (Track inventory purchases)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model PurchaseLog {
+  id              String   @id @default(cuid())
+  shopId          String   // ✅ CRITICAL: Links to shop
+  productId       String
+  
+  quantity        Int
+  unitCost        Float
+  supplierName    String
+  invoiceNumber   String?
+  gstIncluded     Boolean  @default(true)
+  gstRate         Float    @default(18)
+  totalCost       Float
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([shopId])
+  @@index([shopId, createdAt])
+  @@index([productId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ALERTS MODEL (In-app notifications)
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Alert {
   id          String   @id @default(cuid())
+  shopId      String   // ✅ Multi-tenant isolation for alerts
   type        String
   title       String
   description String
   actionLabel String?
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@index([shopId])
+  @@index([shopId, createdAt])
 }

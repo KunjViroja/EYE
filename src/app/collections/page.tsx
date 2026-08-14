@@ -42,6 +42,7 @@ export default function InventoryPage() {
         name: p.name,
         sku: p.sku,
         price: p.price,
+        stock: p.stock ?? 10,
         imageUrl: p.imageUrl || "/products/default.jpg",
         badge: p.badge ? p.badge.replace("_", " ") : undefined,
         category: p.category === "BESPOKE_LENSES" ? "Bespoke Lenses" : p.category === "ACCESSORIES" ? "Accessories" : "Frames",
@@ -61,7 +62,9 @@ export default function InventoryPage() {
     fetchInventoryData();
   }, [fetchInventoryData]);
 
-  const totalValue = products.reduce((sum, p) => sum + p.price, 0);
+  // ✅ ACCURATE ATOMIC CALCULATION: Total Stock Units & Total Valuation
+  const totalUnits = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+  const totalValue = products.reduce((sum, p) => sum + p.price * (p.stock || 0), 0);
 
   return (
     <div>
@@ -90,15 +93,15 @@ export default function InventoryPage() {
         {/* Stats Row */}
         <div className={styles.statsRow}>
           <div className={styles.stat}>
-            <span className={styles.statValue}>{products.length.toLocaleString()}</span>
+            <span className={styles.statValue}>{products.length} Models ({totalUnits} Units)</span>
             <span className={styles.statLabel}>Total Inventory Items</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>
             <span className={styles.statValue}>
-              {saasConfig.currency}{totalValue > 0 ? (totalValue > 1000 ? `${(totalValue / 1000).toFixed(1)}k` : totalValue) : "0"}
+              {saasConfig.currency}{totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
             </span>
-            <span className={styles.statLabel}>Inventory Valuation</span>
+            <span className={styles.statLabel}>Total Inventory Valuation</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.stat}>

@@ -8,6 +8,7 @@ import { Phone, Mail, MapPin, Download, Plus, Edit3, UserPlus, RefreshCw } from 
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
 import NewClientModal from "@/components/clientele/NewClientModal";
 import EditPrescriptionModal from "@/components/clientele/EditPrescriptionModal";
+import { saasConfig } from "@/config/saasConfig";
 
 export default function ClientelePage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -32,6 +33,18 @@ export default function ClientelePage() {
 
   const client = clients[selectedClientIndex] || clients[0];
   const activeRx = client?.prescriptions?.[0];
+
+  // ✅ ACCURATE ATOMIC CALCULATION: Sum total units/quantities across all sales
+  const totalPiecesOwned =
+    client?.sales?.reduce(
+      (total: number, sale: any) =>
+        total +
+        (sale.items?.reduce(
+          (itemSum: number, item: any) => itemSum + (item.quantity || 1),
+          0
+        ) || 0),
+      0
+    ) || 0;
 
   return (
     <div>
@@ -113,14 +126,14 @@ export default function ClientelePage() {
                 <div className={styles.profileStats}>
                   <div className={styles.profileStat}>
                     <span className={styles.profileStatValue}>
-                      ${(client.totalSpent || 0).toLocaleString()}.00
+                      {saasConfig.currency}{(client.totalSpent || 0).toLocaleString()}
                     </span>
                     <span className={styles.profileStatLabel}>Total Spent</span>
                   </div>
                   <div className={styles.profileStatDivider} />
                   <div className={styles.profileStat}>
                     <span className={styles.profileStatValue}>
-                      {client.sales?.length || 0} Pieces
+                      {totalPiecesOwned} {totalPiecesOwned === 1 ? "Piece" : "Pieces"}
                     </span>
                     <span className={styles.profileStatLabel}>Items Owned</span>
                   </div>
@@ -257,36 +270,44 @@ export default function ClientelePage() {
               {/* EYE Acquisitions */}
               <div className={styles.acquisitionsCard}>
                 <div className={styles.acquisitionsHeader}>
-                  <h3 className={styles.acquisitionsTitle}>EYE Acquisitions</h3>
+                  <h3 className={styles.acquisitionsTitle}>Acquisitions & Purchase History</h3>
                   <span className={styles.fullLedger}>FULL LEDGER</span>
                 </div>
                 <div className={styles.acquisitionsList}>
                   {(!client.sales || client.sales.length === 0) ? (
                     <div className={styles.emptyAcquisitions}>No purchases recorded yet for this client.</div>
                   ) : (
-                    client.sales.map((sale: any) => (
-                      <div key={sale.id} className={styles.acquisitionRow}>
-                        <div className={styles.acqImg}>
-                          <EyewearSilhouette color="#C9A96E" size={36} />
+                    client.sales.map((sale: any) => {
+                      const totalUnitsInSale =
+                        sale.items?.reduce(
+                          (sum: number, it: any) => sum + (it.quantity || 1),
+                          0
+                        ) || 1;
+
+                      return (
+                        <div key={sale.id} className={styles.acquisitionRow}>
+                          <div className={styles.acqImg}>
+                            <EyewearSilhouette color="#C9A96E" size={36} />
+                          </div>
+                          <div className={styles.acqInfo}>
+                            <div className={styles.acqProduct}>
+                              {sale.items[0]?.product?.name || "Bespoke Eyewear Creation"}
+                            </div>
+                            <div className={styles.acqDesc}>
+                              {sale.items[0]?.product?.brand || "OPTICAL"} • {totalUnitsInSale} Unit{totalUnitsInSale === 1 ? "" : "s"}
+                            </div>
+                            <div className={styles.acqMeta}>
+                              {new Date(sale.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              <span className={styles.acqDot}>•</span>
+                              <span className={`${styles.acqStatus} ${sale.status === "COMPLETED" ? styles.acqStatusDelivered : styles.acqStatusProcessing}`}>
+                                {sale.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className={styles.acqAmount}>{saasConfig.currency}{sale.grandTotal.toFixed(2)}</div>
                         </div>
-                        <div className={styles.acqInfo}>
-                          <div className={styles.acqProduct}>
-                            {sale.items[0]?.product?.name || "Bespoke Eyewear Creation"}
-                          </div>
-                          <div className={styles.acqDesc}>
-                            {sale.items[0]?.product?.brand || "LUXURY BRAND"} • {sale.items.length} Item(s)
-                          </div>
-                          <div className={styles.acqMeta}>
-                            {new Date(sale.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                            <span className={styles.acqDot}>•</span>
-                            <span className={`${styles.acqStatus} ${sale.status === "COMPLETED" ? styles.acqStatusDelivered : styles.acqStatusProcessing}`}>
-                              {sale.status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={styles.acqAmount}>${sale.grandTotal.toFixed(2)}</div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

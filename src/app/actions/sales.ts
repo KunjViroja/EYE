@@ -1,8 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
-import { PaymentMethod, SaleStatus } from "@prisma/client";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { PaymentMethod, SaleStatus, Prisma } from "@prisma/client";
+import { getShopId } from "@/lib/shopAuth";
 
 export interface POSCartItemInput {
   productId: string;
@@ -23,7 +24,6 @@ export interface ProcessSaleInput {
   remainingBalance?: number;
 }
 
-// Memory fallback store for sales if database is offline
 export interface ActiveOrderRecord {
   id: string;
   clientName: string;
@@ -35,103 +35,183 @@ export interface ActiveOrderRecord {
   createdAt: string;
 }
 
-let activeOrdersMemory: ActiveOrderRecord[] = [];
+// ─── Fetch Active / Pending Advance Orders From Database ─────────────────────
+export async function getActiveOrders(): Promise<{ success: boolean; data: ActiveOrderRecord[]; error?: string }> {
+  try {
+    const shopId = await getShopId();
 
-export async function getActiveOrders() {
-  return { success: true, data: activeOrdersMemory };
+    if (!shopId) {
+      return { success: true, data: [] };
+    }
+
+    const salesFromDb = await prisma.sale.findMany({
+      where: {
+        shopId,
+        OR: [
+          { remainingBalance: { gt: 0 } },
+          { status: SaleStatus.PROCESSING },
+        ],
+      },
+      include: {
+        client: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    const data: ActiveOrderRecord[] = salesFromDb.map((s) => ({
+      id: s.id,
+      clientName: s.client?.name || "Client",
+      grandTotal: s.grandTotal,
+      advancePaid: s.advancePaid,
+      remainingBalance: s.remainingBalance,
+      status: s.remainingBalance > 0 ? "PROCESSING_ADVANCE" : "DELIVERED_PAID",
+      paymentMethod: s.paymentMethod,
+      createdAt: s.createdAt.toISOString(),
+    }));
+
+    return { success: true, data };
+  } catch (err: any) {
+    console.error("Error fetching active orders:", err);
+    return { success: false, data: [], error: err?.message || "Failed to load active orders" };
+  }
 }
 
 // ─── Process POS Sale Transaction ────────────────────────────────────────────
 export async function processSaleTransaction(input: ProcessSaleInput) {
   try {
-    if (!input.clientId) {
-      return { success: false, error: "Please select a client for this transaction." };
+    if (!input.clientId?.trim()) {
+      return { success: false, error: "Client ID is required." };
     }
 
     if (!input.items || input.items.length === 0) {
-      return { success: false, error: "Cart is empty. Add items before processing transaction." };
+      return { success: false, error: "Cart cannot be empty." };
     }
 
-    const isAdvance = input.isAdvancePayment || false;
-    const advancePaid = isAdvance ? (input.advancePaidAmount || 0) : input.grandTotal;
-    const remaining = Math.max(0, input.grandTotal - advancePaid);
-    const saleStatus = isAdvance && remaining > 0 ? SaleStatus.PROCESSING : SaleStatus.COMPLETED;
+    for (const item of input.items) {
+      if (!item.productId) {
+        return { success: false, error: "Invalid product in cart." };
+      }
+      if (item.quantity <= 0) {
+        return { success: false, error: "Product quantity must be at least 1." };
+      }
+      if (item.unitPrice < 0) {
+        return { success: false, error: "Product price cannot be negative." };
+      }
+    }
 
-    let saleResult: any = null;
+    if (input.grandTotal < 0) {
+      return { success: false, error: "Grand total cannot be negative." };
+    }
 
-    try {
-      // Execute in a database transaction
-      saleResult = await prisma.$transaction(async (tx: any) => {
-        // 1. Create Sale record
-        const createdSale = await tx.sale.create({
-          data: {
-            clientId: input.clientId,
-            subtotal: input.subtotal,
-            discount: input.discount,
-            grandTotal: input.grandTotal,
-            status: saleStatus,
-            paymentMethod: input.paymentMethod,
-            items: {
-              create: input.items.map((item) => ({
-                productId: item.productId,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                hasPrescription: item.hasPrescription || false,
-              })),
-            },
-          },
-          include: {
-            items: true,
-            client: true,
-          },
-        });
+    const isAdvance = input.isAdvancePayment ?? false;
+    const advancePaid = isAdvance ? Number(input.advancePaidAmount || 0) : input.grandTotal;
+    const remaining = isAdvance ? Math.max(0, input.grandTotal - advancePaid) : 0;
 
-        // 2. Decrement stock for each purchased product
-        for (const item of input.items) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { decrement: item.quantity },
-            },
-          });
-        }
+    if (isAdvance && advancePaid < 0) {
+      return { success: false, error: "Advance paid amount cannot be negative." };
+    }
 
-        // 3. Update client total spent with advance paid amount
-        await tx.client.update({
-          where: { id: input.clientId },
-          data: {
-            totalSpent: { increment: advancePaid },
-          },
-        });
+    const shopId = await getShopId();
 
-        return createdSale;
+    if (!shopId) {
+      return { success: false, error: "Shop authorization failed." };
+    }
+
+    // Verify client belongs to this shop
+    const client = await prisma.client.findUnique({
+      where: { id: input.clientId },
+      select: { id: true, shopId: true, name: true },
+    });
+
+    if (!client || client.shopId !== shopId) {
+      return { success: false, error: "Client not found or belongs to another store." };
+    }
+
+    // Verify all products belong to this shop & check stock
+    const productIds = input.items.map((item) => item.productId);
+    const dbProducts = await prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        shopId,
+      },
+      select: { id: true, stock: true, name: true, brand: true },
+    });
+
+    if (dbProducts.length !== productIds.length) {
+      return { success: false, error: "One or more products were not found in your inventory." };
+    }
+
+    const productMap = new Map(dbProducts.map((p) => [p.id, p]));
+
+    for (const item of input.items) {
+      const prod = productMap.get(item.productId);
+      if (!prod) {
+        return { success: false, error: `Product not found.` };
+      }
+      if (prod.stock < item.quantity) {
+        return {
+          success: false,
+          error: `Insufficient stock for "${prod.brand} ${prod.name}". Available: ${prod.stock}, requested: ${item.quantity}.`,
+        };
+      }
+    }
+
+    // Atomic Database Transaction
+    const saleResult = await prisma.$transaction(async (tx) => {
+      // 1. Create Sale Record
+      const sale = await tx.sale.create({
+        data: {
+          shopId,
+          clientId: input.clientId,
+          paymentMethod: input.paymentMethod || PaymentMethod.CASH,
+          status: remaining > 0 ? SaleStatus.PROCESSING : SaleStatus.COMPLETED,
+          subtotal: input.subtotal,
+          discount: input.discount,
+          grandTotal: input.grandTotal,
+          isAdvancePayment: isAdvance,
+          advancePaid,
+          remainingBalance: remaining,
+        },
       });
-    } catch (dbErr) {
-      console.warn("DB transaction fallback active.");
-    }
 
-    const today = new Date();
-    const yyyymmdd = today.getFullYear().toString() +
-      (today.getMonth() + 1).toString().padStart(2, "0") +
-      today.getDate().toString().padStart(2, "0");
-    const seqNum = Math.floor(1000 + Math.random() * 9000);
-    const dateFormattedOrderId = `ORD-${yyyymmdd}-${seqNum}`;
+      // 2. Create Sale Items
+      await tx.saleItem.createMany({
+        data: input.items.map((item) => ({
+          saleId: sale.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          hasPrescription: item.hasPrescription || false,
+        })),
+      });
 
-    const orderId = saleResult ? (saleResult.id.length > 20 ? dateFormattedOrderId : saleResult.id) : dateFormattedOrderId;
+      // 3. Decrement Product Stock
+      for (const item of input.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: { decrement: item.quantity },
+          },
+        });
+      }
 
-    const newMemoryRecord: ActiveOrderRecord = {
-      id: orderId,
-      clientName: saleResult?.client?.name || "Boutique Client",
-      grandTotal: input.grandTotal,
-      advancePaid,
-      remainingBalance: remaining,
-      status: remaining > 0 ? "PROCESSING_ADVANCE" : "DELIVERED_PAID",
-      paymentMethod: input.paymentMethod,
-      createdAt: new Date().toISOString(),
-    };
+      // 4. Update Client Lifetime Total Spent
+      await tx.client.update({
+        where: { id: input.clientId },
+        data: {
+          totalSpent: { increment: input.grandTotal },
+        },
+      });
 
-    activeOrdersMemory.unshift(newMemoryRecord);
+      return sale;
+    });
 
+    revalidateTag("insights-cache", "default");
+    revalidateTag("products-cache", "default");
+    revalidateTag("clients-cache", "default");
     revalidatePath("/insights");
     revalidatePath("/collections");
     revalidatePath("/clientele");
@@ -140,45 +220,68 @@ export async function processSaleTransaction(input: ProcessSaleInput) {
     return {
       success: true,
       data: {
-        id: orderId,
+        id: saleResult.id,
         grandTotal: input.grandTotal,
         advancePaid,
         remainingBalance: remaining,
         isAdvancePayment: isAdvance,
       },
+      message: `Order #${saleResult.id} created successfully.`,
     };
   } catch (error: any) {
-    console.error("Error processing sale transaction:", error);
-    return { success: false, error: error.message || "Failed to process transaction" };
+    console.error("❌ Error processing sale transaction:", error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return { success: false, error: "One or more items were not found. Cart may have been modified." };
+    }
+
+    return {
+      success: false,
+      error: error?.message || "Failed to process transaction",
+    };
   }
 }
 
 // ─── Settle Order Remaining Balance on Delivery ──────────────────────────────
 export async function settleOrderRemainingBalance(orderId: string) {
   try {
-    const found = activeOrdersMemory.find((o) => o.id === orderId);
-    if (found) {
-      found.advancePaid = found.grandTotal;
-      found.remainingBalance = 0;
-      found.status = "DELIVERED_PAID";
+    if (!orderId?.trim()) {
+      return { success: false, error: "Order ID is required." };
     }
 
-    try {
-      await prisma.sale.update({
-        where: { id: orderId },
-        data: {
-          status: SaleStatus.COMPLETED,
-        },
-      });
-    } catch (err) {
-      console.warn("DB sale status update fallback.");
+    const shopId = await getShopId();
+
+    if (!shopId) {
+      return { success: false, error: "Unauthorized access." };
     }
 
+    // Verify order exists and belongs to this shop
+    const existingOrder = await prisma.sale.findUnique({
+      where: { id: orderId },
+      select: { id: true, shopId: true, grandTotal: true, remainingBalance: true, status: true },
+    });
+
+    if (!existingOrder || existingOrder.shopId !== shopId) {
+      return { success: false, error: "Order not found or access denied." };
+    }
+
+    // Update in database atomically
+    await prisma.sale.update({
+      where: { id: orderId },
+      data: {
+        advancePaid: existingOrder.grandTotal,
+        remainingBalance: 0,
+        status: SaleStatus.COMPLETED,
+      },
+    });
+
+    revalidateTag("insights-cache", "default");
     revalidatePath("/pos");
     revalidatePath("/insights");
 
-    return { success: true, message: `Order #${orderId} delivered & fully paid!` };
+    return { success: true, message: `Order #${orderId} settled and marked delivered!` };
   } catch (err: any) {
+    console.error("Error settling balance:", err);
     return { success: false, error: err?.message || "Failed to settle balance" };
   }
 }

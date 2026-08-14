@@ -1,5 +1,6 @@
 import styles from "./ProductCard.module.css";
 import EyewearSilhouette from "@/components/ui/EyewearSilhouette";
+import { saasConfig } from "@/config/saasConfig";
 
 export interface ProductItem {
   id: string;
@@ -7,6 +8,7 @@ export interface ProductItem {
   name: string;
   sku: string;
   price: number;
+  stock?: number;
   imageUrl?: string;
   badge?: string;
   category?: string;
@@ -53,7 +55,14 @@ export default function ProductCard({ product }: Props) {
           <span className={styles.sku}>SKU: {product.sku}</span>
         </div>
         <h3 className={styles.productName}>{product.name}</h3>
-        <div className={styles.price}>${product.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+          <div className={styles.price}>{saasConfig.currency}{product.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+          {product.stock !== undefined && (
+            <span style={{ fontSize: "11px", color: product.stock <= 2 ? "#f87171" : "#94a3b8", fontWeight: 600 }}>
+              {product.stock} in stock
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );
